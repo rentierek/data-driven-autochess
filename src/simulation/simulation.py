@@ -662,6 +662,9 @@ class Simulation:
         if not target or not target.is_alive():
             return
         
+        # IMPORTANT: Mark effect as triggered FIRST to prevent multiple casts
+        unit.state.mark_effect_triggered()
+        
         # Consume mana
         unit.stats.spend_mana(ability.mana_cost)
         

@@ -41,6 +41,10 @@ def run_8v8_battle(seed: int = 12345, verbose: bool = True) -> dict:
     sim = Simulation(seed=seed, config=config)
     sim.set_config_loader(loader)
     
+    # Load traits
+    traits_data = loader.load_all_traits()
+    sim.set_trait_manager(traits_data)
+    
     # ═══════════════════════════════════════════════════════════════════════════
     # TEAM 0 (BLUE) - Pozycje: dolna część mapy (r=0,1,2)
     # ═══════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,284 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# DEFINICJE TRAITÓW/SYNERGII
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Traity to synergie między jednostkami. Aktywują się przy progach (2/4/6).
+#
+# KLUCZOWE ZASADY:
+# - Unikalne jednostki: 2x ta sama jednostka = 1 do traitu
+# - Progi zastępują: Knight 4 = 40 armor, NIE 20+40
+# - Targets: holders (trait units), team (wszyscy), self, adjacent
+#
+# TRIGGERY:
+# - on_battle_start: start walki
+# - on_hp_threshold: HP poniżej progu
+# - on_time: po X tickach
+# - on_death: po śmierci sojusznika
+# - on_interval: co X ticków
+# ═══════════════════════════════════════════════════════════════════════════
+
+traits:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # KNIGHT - Bonus Armor dla posiadaczy, na 6 dla całego teamu
+  # ─────────────────────────────────────────────────────────────────────────
+  knight:
+    name: "Knight"
+    description: "Knights gain bonus armor. At 6, grants armor to entire team."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "armor"
+            value: 20
+            target: "holders"
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "armor"
+            value: 40
+            target: "holders"
+      6:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "armor"
+            value: 60
+            target: "team"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SORCERER - Bonus AP dla casterów
+  # ─────────────────────────────────────────────────────────────────────────
+  sorcerer:
+    name: "Sorcerer"
+    description: "Sorcerers gain bonus Ability Power."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "ap"
+            value: 25
+            target: "holders"
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "ap"
+            value: 50
+            target: "holders"
+      6:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "ap"
+            value: 80
+            target: "holders"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # RANGER - Bonus Attack Speed dla dystansowych
+  # ─────────────────────────────────────────────────────────────────────────
+  ranger:
+    name: "Ranger"
+    description: "Rangers gain bonus Attack Speed."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "attack_speed"
+            value: 0.20
+            target: "holders"
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "attack_speed"
+            value: 0.40
+            target: "holders"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # BERSERKER - Bonus Attack Speed gdy HP poniżej 50%
+  # ─────────────────────────────────────────────────────────────────────────
+  brawler:
+    name: "Brawler"
+    description: "Brawlers gain bonus HP."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "hp"
+            value: 200
+            target: "holders"
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "hp"
+            value: 450
+            target: "holders"
+      6:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "hp"
+            value: 700
+            target: "holders"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ASSASSIN - Crit Chance i Crit Damage
+  # ─────────────────────────────────────────────────────────────────────────
+  assassin:
+    name: "Assassin"
+    description: "Assassins gain bonus Critical Strike chance and damage."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "crit_chance"
+            value: 0.10
+            target: "holders"
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "crit_chance"
+            value: 0.20
+            target: "holders"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # MYSTIC - Magic Resist dla całego teamu
+  # ─────────────────────────────────────────────────────────────────────────
+  mystic:
+    name: "Mystic"
+    description: "All allies gain Magic Resistance."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "mr"
+            value: 30
+            target: "team"
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "mr"
+            value: 60
+            target: "team"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # WILD - Attack Speed przy atakowaniu (symulowane przez start buff)
+  # ─────────────────────────────────────────────────────────────────────────
+  wild:
+    name: "Wild"
+    description: "Wild allies gain Attack Speed."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "attack_speed"
+            value: 0.15
+            target: "holders"
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "stat_bonus"
+            stat: "attack_speed"
+            value: 0.30
+            target: "team"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ELEMENTAL - Shiell na starcie walki
+  # ─────────────────────────────────────────────────────────────────────────
+  elemental:
+    name: "Elemental"
+    description: "Elementals gain a shield at battle start."
+    thresholds:
+      2:
+        trigger: "on_battle_start"
+        effects:
+          - type: "shield"
+            value: 200
+            target: "holders"
+            duration: 999
+      4:
+        trigger: "on_battle_start"
+        effects:
+          - type: "shield"
+            value: 400
+            target: "holders"
+            duration: 999
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ASCENDED - Bonus damage po 10 sekundach (time-based trigger)
+  # ─────────────────────────────────────────────────────────────────────────
+  ascended:
+    name: "Ascended"
+    description: "After 10 seconds, Ascended units deal bonus damage."
+    thresholds:
+      2:
+        trigger: "on_time"
+        trigger_params:
+          ticks: 300  # 10 sec @ 30 TPS
+        effects:
+          - type: "damage_amp"
+            value: 0.50
+            target: "holders"
+      4:
+        trigger: "on_time"
+        trigger_params:
+          ticks: 300
+        effects:
+          - type: "damage_amp"
+            value: 1.00
+            target: "holders"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # PULSEFIRE - Bonus Attack Speed co 4 sekundy (interval trigger)
+  # ─────────────────────────────────────────────────────────────────────────
+  machine:
+    name: "Machine"
+    description: "Every 4 seconds, Machines gain Attack Speed (stacking)."
+    thresholds:
+      2:
+        trigger: "on_interval"
+        trigger_params:
+          interval: 120  # 4 sec @ 30 TPS
+        effects:
+          - type: "stat_bonus"
+            stat: "attack_speed"
+            value: 0.10
+            target: "holders"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # LIGHT - Bonus HP przy HP poniżej 50%
+  # ─────────────────────────────────────────────────────────────────────────
+  light:
+    name: "Light"
+    description: "When Light units drop below 50% HP, they heal."
+    thresholds:
+      2:
+        trigger: "on_hp_threshold"
+        trigger_params:
+          threshold: 0.5
+        effects:
+          - type: "stat_bonus"
+            stat: "hp"
+            value: 150
+            target: "self"
+      4:
+        trigger: "on_hp_threshold"
+        trigger_params:
+          threshold: 0.5
+        effects:
+          - type: "stat_bonus"
+            stat: "hp"
+            value: 300
+            target: "self"

@@ -13,6 +13,7 @@
 9. [System Buffów](#system-buffów)
 10. [System Eventów](#system-eventów)
 11. [System Umiejętności](#system-umiejętności)
+12. [System Traitów](#system-traitów)
 
 ---
 
@@ -724,5 +725,176 @@ champion_classes:
 ### Testy
 
 ```bash
-pytest tests/ -v  # 88 tests
+pytest tests/ -v  # 100 tests (88 core + 12 traits)
+```
+
+---
+
+## System Traitów
+
+**Pliki:** `src/traits/trait.py`, `src/traits/trait_manager.py`, `data/traits.yaml`
+
+### Zasady Działania
+
+1. **Unikalne Jednostki**
+   - 2x ta sama jednostka = **1** do traitu
+   - Liczymy po `base_id` (typ jednostki, nie instance)
+
+2. **Progi Zastępują**
+   - Knight 4 = 40 armor, NIE 20+40=60
+   - Aktywny jest tylko najwyższy osiągnięty próg
+
+3. **Cele Efektów**
+
+   | Target | Opis |
+   |--------|------|
+   | `holders` | Tylko jednostki z traitem |
+   | `team` | Cały team |
+   | `self` | Jednostka która triggered |
+   | `adjacent` | Sąsiedzi na hexach |
+   | `enemies` | Wrogowie |
+
+### Typy Triggerów
+
+| Trigger | Parametry | Kiedy aktywuje? |
+|---------|-----------|-----------------|
+| `on_battle_start` | - | Tick 0 (start walki) |
+| `on_hp_threshold` | `threshold: 0.5` | Gdy HP spadnie poniżej % |
+| `on_time` | `ticks: 300` | Dokładnie po X tickach |
+| `on_interval` | `interval: 120` | Co X ticków |
+| `on_death` | - | Gdy sojusznik z traitem ginie |
+| `on_first_cast` | - | Gdy jednostka pierwszy raz castuje |
+| `on_kill` | - | Gdy jednostka zabije wroga |
+
+### Typy Efektów
+
+| Efekt | Parametry | Opis |
+|-------|-----------|------|
+| `stat_bonus` | `stat`, `value` | Dodaje statystykę |
+| `shield` | `value`, `duration` | Daje tarczę |
+| `damage_amp` | `value`, `duration` | +X% zadawanych obrażeń |
+| `damage_reduction` | `value`, `duration` | -X% otrzymywanych obrażeń |
+
+### Przykład Traitu (YAML)
+
+```yaml
+knight:
+  name: "Knight"
+  description: "Knights gain bonus armor. At 6, entire team gets armor."
+  thresholds:
+    2:
+      trigger: "on_battle_start"
+      effects:
+        - type: "stat_bonus"
+          stat: "armor"
+          value: 20
+          target: "holders"
+    4:
+      trigger: "on_battle_start"
+      effects:
+        - type: "stat_bonus"
+          stat: "armor"
+          value: 40
+          target: "holders"
+    6:
+      trigger: "on_battle_start"
+      effects:
+        - type: "stat_bonus"
+          stat: "armor"
+          value: 60
+          target: "team"  # Cały team!
+```
+
+### Trigger Czasowy (on_time)
+
+```yaml
+ascended:
+  name: "Ascended"
+  description: "After 10 seconds, deal 50% more damage."
+  thresholds:
+    2:
+      trigger: "on_time"
+      trigger_params:
+        ticks: 300  # 10s @ 30 TPS
+      effects:
+        - type: "damage_amp"
+          value: 0.5
+          target: "holders"
+```
+
+### Trigger HP (on_hp_threshold)
+
+```yaml
+light:
+  name: "Light"
+  description: "When below 50% HP, heal for 150 HP."
+  thresholds:
+    2:
+      trigger: "on_hp_threshold"
+      trigger_params:
+        threshold: 0.5
+      effects:
+        - type: "stat_bonus"
+          stat: "hp"
+          value: 150
+          target: "self"  # Tylko jednostka która triggered
+```
+
+### Zdefiniowane Traity (11)
+
+| Trait | Progi | Efekt |
+|-------|-------|-------|
+| `knight` | 2/4/6 | Armor (holders, team@6) |
+| `sorcerer` | 2/4/6 | AP (holders) |
+| `ranger` | 2/4 | Attack Speed (holders) |
+| `brawler` | 2/4/6 | HP (holders) |
+| `assassin` | 2/4 | Crit Chance (holders) |
+| `mystic` | 2/4 | MR (team) |
+| `wild` | 2/4 | AS (holders, team@4) |
+| `elemental` | 2/4 | Shield (holders) |
+| `ascended` | 2/4 | Damage Amp po 10s |
+| `machine` | 2 | AS co 4s (stacking) |
+| `light` | 2/4 | Heal przy <50% HP |
+
+### Integracja z Simulation
+
+```python
+# Setup
+loader = ConfigLoader("data/")
+sim = Simulation(seed=42, config=config)
+sim.set_config_loader(loader)
+
+# Load traits
+traits_data = loader.load_all_traits()
+sim.set_trait_manager(traits_data)
+
+# Run - traits are automatically applied!
+result = sim.run()
+```
+
+### Flow TraitManager
+
+```
+tick 0:
+  on_battle_start()
+    └─> count_traits() - liczy unikalne jednostki per trait
+    └─> For each active threshold:
+        └─> Check if trigger == ON_BATTLE_START
+        └─> Apply effects to target units
+
+every tick:
+  on_tick(tick)
+    └─> Check ON_TIME triggers (if tick == target_ticks)
+    └─> Check ON_INTERVAL triggers (if tick % interval == 0)
+
+on damage:
+  on_unit_damaged(unit)
+    └─> Check ON_HP_THRESHOLD triggers
+    └─> If hp_percent <= threshold and not already triggered:
+        └─> Apply effects with target="self"
+
+on death:
+  on_unit_death(unit)
+    └─> Check ON_DEATH triggers
+    └─> Recount traits (unit removed)
 ```

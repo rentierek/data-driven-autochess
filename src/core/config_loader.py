@@ -282,6 +282,51 @@ class ConfigLoader:
         return result
     
     # ─────────────────────────────────────────────────────────────────────────
+    # TRAITS
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    _traits: Optional[Dict] = None
+    
+    def _get_all_traits_raw(self) -> Dict:
+        """Zwraca wszystkie surowe definicje traitów."""
+        if self._traits is None:
+            data = self._load_yaml("traits.yaml")
+            self._traits = data.get("traits", {})
+        return self._traits
+    
+    def load_all_traits(self) -> Dict:
+        """
+        Wczytuje wszystkie definicje traitów.
+        
+        Returns:
+            Dict[str, Dict]: Mapa trait_id -> definicja
+        """
+        return copy.deepcopy(self._get_all_traits_raw())
+    
+    def load_trait(self, trait_id: str) -> Dict:
+        """
+        Wczytuje definicję traitu.
+        
+        Args:
+            trait_id: ID traitu
+            
+        Returns:
+            Dict: Definicja traitu
+            
+        Raises:
+            KeyError: Jeśli trait nie istnieje
+        """
+        traits = self._get_all_traits_raw()
+        
+        if trait_id not in traits:
+            raise KeyError(f"Trait '{trait_id}' not found in traits.yaml")
+        
+        result = copy.deepcopy(traits[trait_id])
+        result["id"] = trait_id
+        
+        return result
+    
+    # ─────────────────────────────────────────────────────────────────────────
     # HELPERY
     # ─────────────────────────────────────────────────────────────────────────
     

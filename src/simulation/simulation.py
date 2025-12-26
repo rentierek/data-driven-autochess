@@ -107,6 +107,7 @@ from ..units.state_machine import UnitState
 from ..combat.damage import DamageType, calculate_damage, apply_damage
 from ..events.event_logger import EventLogger, EventType
 from ..abilities import Ability, ProjectileManager, EFFECT_REGISTRY
+from ..traits import TraitManager
 
 
 @dataclass
@@ -191,6 +192,9 @@ class Simulation:
         self.projectile_manager = ProjectileManager()
         self._ability_cache: Dict[str, Ability] = {}
         self._config_loader: Optional[ConfigLoader] = None
+        
+        # Trait system
+        self.trait_manager: Optional[TraitManager] = None
     
     # ─────────────────────────────────────────────────────────────────────────
     # DODAWANIE JEDNOSTEK
@@ -254,6 +258,10 @@ class Simulation:
         # Log start
         self._log_start()
         
+        # Activate traits at battle start
+        if self.trait_manager:
+            self.trait_manager.on_battle_start()
+        
         # Główna pętla
         while not self.is_finished and self.tick < self.config.max_ticks:
             self._run_tick()
@@ -266,6 +274,10 @@ class Simulation:
     
     def _run_tick(self) -> None:
         """Wykonuje jeden tick symulacji."""
+        
+        # 0. Trait time-based triggers
+        if self.trait_manager:
+            self.trait_manager.on_tick(self.tick)
         
         # 1. Update buffs
         self._phase_update_buffs()
@@ -602,6 +614,16 @@ class Simulation:
     def set_config_loader(self, loader: ConfigLoader) -> None:
         """Ustawia loader do ładowania abilities."""
         self._config_loader = loader
+    
+    def set_trait_manager(self, traits_data: Dict[str, Any]) -> None:
+        """
+        Tworzy i konfiguruje TraitManager.
+        
+        Args:
+            traits_data: Słownik z traits.yaml (klucz 'traits')
+        """
+        self.trait_manager = TraitManager(self)
+        self.trait_manager.load_traits(traits_data)
     
     def _get_unit_ability(self, unit: Unit) -> Optional[Ability]:
         """

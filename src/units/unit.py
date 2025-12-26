@@ -92,6 +92,7 @@ class Unit:
     # Pozycja i stan
     position: HexCoord
     stats: UnitStats
+    base_id: str = ""  # Base unit type (e.g. "warrior") for trait counting
     state: UnitStateMachine = field(default_factory=UnitStateMachine)
     star_level: int = 1
     
@@ -203,6 +204,7 @@ class Unit:
             name=name,
             unit_type=unit_type,
             team=team,
+            base_id=unit_type,  # For unique trait counting
             position=position,
             stats=stats,
             star_level=star_level,

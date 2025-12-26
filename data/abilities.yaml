@@ -1,0 +1,259 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# DEFINICJE UMIEJĘTNOŚCI
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# NOWY FORMAT:
+#   value: [100, 200, 400]  - wartości per star (1★, 2★, 3★)
+#   scaling: "ap"           - skalowanie z statystyki
+#   
+# WZÓR: final = value[star] × (caster_stat / 100)
+#
+# TYPY EFEKTÓW:
+#   damage, heal, shield, stun, burn, wound, dot,
+#   slow, sunder, shred, execute, buff, mana_grant
+# ═══════════════════════════════════════════════════════════════════════════
+
+abilities:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SHIELD BASH (Warrior)
+  # Uderza cel i ogłusza
+  # ─────────────────────────────────────────────────────────────────────────
+  shield_bash:
+    name: "Shield Bash"
+    mana_cost: 100
+    cast_time: [15, 12, 10]
+    target_type: "current_target"
+    delivery: "instant"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [150, 275, 450]    # 1★, 2★, 3★
+        scaling: "ad"              # × AD%
+      - type: "stun"
+        duration: [30, 45, 60]     # 1s, 1.5s, 2s
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # VOLLEY (Archer)
+  # Strzela w wielu wrogów
+  # ─────────────────────────────────────────────────────────────────────────
+  volley:
+    name: "Volley"
+    mana_cost: 100
+    cast_time: 10
+    target_type: "nearest"
+    delivery: "projectile"
+    projectile:
+      speed: 4
+      homing: true
+    aoe:
+      type: "circle"
+      radius: [1, 2, 2]
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [80, 140, 250]
+        scaling: "ad"
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # FIREBALL (Mage)
+  # Duże obrażenia magiczne + burn
+  # ─────────────────────────────────────────────────────────────────────────
+  fireball:
+    name: "Fireball"
+    mana_cost: 80
+    cast_time: [20, 18, 15]
+    target_type: "current_target"
+    delivery: "projectile"
+    projectile:
+      speed: 3
+      homing: true
+    effects:
+      - type: "damage"
+        damage_type: "magical"
+        value: [200, 350, 600]
+        scaling: "ap"
+      - type: "burn"
+        value: [20, 35, 60]        # true damage per second
+        duration: 90                # 3 sekundy
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # BACKSTAB (Assassin)
+  # Duże obrażenia + wound (grievous wounds)
+  # ─────────────────────────────────────────────────────────────────────────
+  backstab:
+    name: "Backstab"
+    mana_cost: 100
+    cast_time: [5, 4, 3]
+    target_type: "lowest_hp_percent"
+    delivery: "instant"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [250, 450, 800]
+        scaling: "ad"
+      - type: "wound"
+        value: [40, 50, 60]        # % redukcji leczenia
+        duration: 150               # 5 sekund
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # HEAL WAVE (Healer)
+  # Leczy sojuszników + daje shield
+  # ─────────────────────────────────────────────────────────────────────────
+  heal_wave:
+    name: "Heal Wave"
+    mana_cost: 70
+    cast_time: 15
+    target_type: "lowest_hp_ally"
+    delivery: "instant"
+    effects:
+      - type: "heal"
+        value: [150, 250, 400]
+        scaling: "ap"
+        target: "target"
+      - type: "shield"
+        value: [100, 175, 300]
+        duration: 90
+        scaling: "ap"
+        target: "target"
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # RECKLESS SWING (Bruiser)
+  # Zadaje obrażenia i leczy siebie
+  # ─────────────────────────────────────────────────────────────────────────
+  reckless_swing:
+    name: "Reckless Swing"
+    mana_cost: 100
+    cast_time: 12
+    target_type: "current_target"
+    delivery: "instant"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [180, 320, 550]
+        scaling: "ad"
+      - type: "heal"
+        value: [100, 180, 300]
+        scaling: "missing_hp"      # % brakującego HP
+        target: "self"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ARMOR BREAK (Tank)
+  # Redukuje Armor celu
+  # ─────────────────────────────────────────────────────────────────────────
+  armor_break:
+    name: "Armor Break"
+    mana_cost: 80
+    cast_time: 10
+    target_type: "current_target"
+    delivery: "instant"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [100, 175, 300]
+        scaling: "ad"
+      - type: "sunder"
+        value: [20, 35, 50]        # redukcja armor
+        duration: 120               # 4 sekundy
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # FROST BOLT (Mage)
+  # Damage + slow
+  # ─────────────────────────────────────────────────────────────────────────
+  frost_bolt:
+    name: "Frost Bolt"
+    mana_cost: 60
+    cast_time: 12
+    target_type: "current_target"
+    delivery: "projectile"
+    projectile:
+      speed: 4
+      homing: true
+    effects:
+      - type: "damage"
+        damage_type: "magical"
+        value: [120, 200, 350]
+        scaling: "ap"
+      - type: "slow"
+        value: [30, 40, 50]        # % slow AS
+        duration: [60, 90, 120]    # 2s, 3s, 4s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # EXECUTE (Executioner)
+  # Zabija poniżej progu HP
+  # ─────────────────────────────────────────────────────────────────────────
+  coup_de_grace:
+    name: "Coup de Grace"
+    mana_cost: 100
+    cast_time: 8
+    target_type: "lowest_hp_percent"
+    delivery: "instant"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [150, 275, 450]
+        scaling: "ad"
+      - type: "execute"
+        threshold: [15, 20, 30]    # zabij poniżej X% HP
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # IRON BASTION (Guardian)
+  # Shield dla siebie skalowany z Armor
+  # ─────────────────────────────────────────────────────────────────────────
+  iron_bastion:
+    name: "Iron Bastion"
+    mana_cost: 90
+    cast_time: 8
+    target_type: "self"
+    delivery: "instant"
+    effects:
+      - type: "shield"
+        value: [200, 350, 600]
+        duration: 150              # 5 sekund
+        scaling: "armor"
+        target: "self"
+      - type: "buff"
+        stat: "armor"
+        value: [20, 35, 50]
+        duration: 150
+        target: "self"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # POISON STING (Assassin)
+  # DoT magiczny
+  # ─────────────────────────────────────────────────────────────────────────
+  poison_sting:
+    name: "Poison Sting"
+    mana_cost: 60
+    cast_time: 5
+    target_type: "current_target"
+    delivery: "instant"
+    effects:
+      - type: "damage"
+        damage_type: "magical"
+        value: [50, 90, 150]
+        scaling: "ap"
+      - type: "dot"
+        damage_type: "magical"
+        value: [30, 50, 90]        # damage per tick
+        duration: 120               # 4 sekundy
+        interval: 30                # co sekundę
+        scaling: "ap"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # MANA BURN (Sorcerer)
+  # Damage + shred MR
+  # ─────────────────────────────────────────────────────────────────────────
+  mana_burn:
+    name: "Mana Burn"
+    mana_cost: 70
+    cast_time: 15
+    target_type: "highest_stat"
+    effects:
+      - type: "damage"
+        damage_type: "magical"
+        value: [180, 300, 500]
+        scaling: "ap"
+      - type: "shred"
+        value: [20, 30, 40]        # redukcja MR
+        duration: 120

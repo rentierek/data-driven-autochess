@@ -1,0 +1,126 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# WARTOŚCI DOMYŚLNE DLA SYMULATORA TFT
+# ═══════════════════════════════════════════════════════════════════════════
+# 
+# Każda statystyka jednostki, która nie jest zdefiniowana w units.yaml,
+# zostanie uzupełniona wartością z tego pliku.
+#
+# Przykład: jeśli jednostka nie ma "crit_chance", dostanie 0.25 (25%)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ---------------------------------------------------------------------------
+# DOMYŚLNE STATYSTYKI JEDNOSTEK
+# ---------------------------------------------------------------------------
+unit_defaults:
+  # --- HP i Mana ---
+  hp: 500                    # Punkty życia
+  max_hp: 500                # Maksymalne HP (= hp na starcie)
+  mana: 0                    # Aktualna mana na starcie
+  max_mana: 100              # Maksymalna mana
+  start_mana: 0              # Mana na początku walki
+  
+  # --- Obrażenia ---
+  attack_damage: 50          # Bazowe obrażenia ataku (AD)
+  ability_power: 0           # Moc umiejętności (AP)
+  
+  # --- Obrona ---
+  armor: 20                  # Pancerz (redukcja dmg fizycznego)
+  magic_resist: 20           # Odporność magiczna (redukcja dmg magicznego)
+  
+  # --- Prędkość ---
+  attack_speed: 0.7          # Ataki na sekundę (0.2 - 5.0)
+  movement_speed: 1.0        # Hexy na tick (nie używane aktualnie)
+  
+  # --- Zasięg ---
+  attack_range: 1            # Zasięg w hexach (1 = melee, 4+ = range)
+  
+  # --- CRITICAL STRIKE ---
+  crit_chance: 0.25          # 25% szansy na krytyka
+  crit_damage: 1.4           # 140% obrażeń przy cricie (mnożnik)
+  
+  # --- Uniki i lifesteal ---
+  dodge_chance: 0.0          # Szansa na unik (0-1)
+  lifesteal: 0.0             # % obrażeń fizycznych -> HP
+  spell_vamp: 0.0            # % obrażeń ze spelli -> HP
+
+# ---------------------------------------------------------------------------
+# MODYFIKATORY POZIOMU GWIAZD
+# ---------------------------------------------------------------------------
+# Jednostki mogą mieć 1-3 gwiazdki.
+# Każdy poziom mnoży HP i obrażenia.
+#
+# 1★ = bazowe statystyki
+# 2★ = 1.8x HP i DMG (3 jednostki 1★ -> 1 jednostka 2★)
+# 3★ = 3.24x HP i DMG (3 jednostki 2★ -> 1 jednostka 3★)
+# ---------------------------------------------------------------------------
+star_modifiers:
+  1:
+    hp_multiplier: 1.0
+    damage_multiplier: 1.0
+  2:
+    hp_multiplier: 1.8
+    damage_multiplier: 1.8
+  3:
+    hp_multiplier: 3.24
+    damage_multiplier: 3.24
+
+# ---------------------------------------------------------------------------
+# KONFIGURACJA SYMULACJI
+# ---------------------------------------------------------------------------
+simulation:
+  ticks_per_second: 30       # Ticki na sekundę (30 = TFT standard)
+  max_ticks: 3000            # Timeout po 100 sekundach
+  grid_width: 7              # Szerokość planszy
+  grid_height: 8             # Wysokość planszy
+
+# ---------------------------------------------------------------------------
+# SYSTEM MANY
+# ---------------------------------------------------------------------------
+# Mana jest zyskiwana na 3 sposoby:
+# 1. Za atak (mana_per_attack)
+# 2. Za otrzymane obrażenia (formuła TFT: 1% pre-mitigation + 3% post-mitigation)
+# 3. Pasywna regeneracja (mana_per_second)
+# ---------------------------------------------------------------------------
+mana_generation:
+  # --- Mana za atak ---
+  mana_per_attack: 10        # Flat mana za każdy auto-attack
+  
+  # --- Mana za otrzymane obrażenia (TFT formula) ---
+  mana_from_damage:
+    pre_mitigation_percent: 0.01   # 1% surowych obrażeń (przed armor/MR)
+    post_mitigation_percent: 0.03  # 3% finalnych obrażeń (po redukcji)
+    cap: 42.5                      # Maksymalna mana z jednego hitu
+    # Wzór: mana = min(cap, raw_dmg * 0.01 + final_dmg * 0.03)
+  
+  # --- Pasywna regeneracja many ---
+  mana_per_second: 0         # 0 = wyłączone (mana tylko z akcji)
+  
+  # --- Mana Overflow ---
+  # Jeśli enabled: nadmiar many po przekroczeniu max przenosi się po caście
+  # Przykład: 85/90 mana + 10 z ataku → cast → 5 mana pozostaje
+  mana_overflow:
+    enabled: true
+
+# ---------------------------------------------------------------------------
+# SYSTEM CASTOWANIA
+# ---------------------------------------------------------------------------
+# Każda ability ma cast time i może mieć effect delay.
+# Podczas castowania mana jest zablokowana (mana lock).
+# ---------------------------------------------------------------------------
+casting_defaults:
+  base_cast_time_ticks: 15        # 0.5s domyślny cast time
+  base_effect_delay_ticks: 0      # 0 = instant effect (efekt na starcie casta)
+  base_mana_lock_duration: 0      # 0 = lock tylko podczas casta
+                                  # >0 = dodatkowe ticki lock po caście
+  mana_lock_during_cast: true     # Czy blokować manę podczas castowania
+
+# ---------------------------------------------------------------------------
+# SYSTEM CHAMPION CLASSES
+# ---------------------------------------------------------------------------
+# Klasy modyfikują zachowanie jednostek (mana gen, targeting, etc.)
+# Definicje klas znajdują się w classes.yaml
+# ---------------------------------------------------------------------------
+champion_classes:
+  enabled: true                   # Czy używać systemu klas
+  classes_file: "classes.yaml"    # Plik z definicjami klas
+

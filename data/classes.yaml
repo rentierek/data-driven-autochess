@@ -1,0 +1,135 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# CHAMPION CLASSES
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Klasy modyfikują zachowanie jednostek w zakresie:
+# - Generowania many (mnożniki, pasywna regen)
+# - Targetingu (domyślny selektor)
+# - Specjalnych zachowań
+#
+# Aby przypisać klasę do jednostki, dodaj w units.yaml:
+#   mana_class: "sorcerer"
+#
+# System klas można wyłączyć w defaults.yaml:
+#   champion_classes:
+#     enabled: false
+# ═══════════════════════════════════════════════════════════════════════════
+
+classes:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SORCERER
+  # ─────────────────────────────────────────────────────────────────────────
+  # Magowie - mniej many z ataków, więcej z damage, pasywna regeneracja
+  # ─────────────────────────────────────────────────────────────────────────
+  sorcerer:
+    name: "Sorcerer"
+    description: "Mages gain less mana from attacks but more from damage and passive regen"
+    
+    # Mnożniki generowania many
+    mana_per_attack_multiplier: 0.5    # -50% many z auto-ataków
+    mana_from_damage_multiplier: 1.5   # +50% many z otrzymanych obrażeń
+    mana_per_second_bonus: 5           # +5 many na sekundę (pasywna regen)
+    
+    # Targeting (opcjonalne - None = bez overrride)
+    # default_target_selector: null
+    
+  # ─────────────────────────────────────────────────────────────────────────
+  # ASSASSIN
+  # ─────────────────────────────────────────────────────────────────────────
+  # Skoczkowie - celują w backline, szybsza mana z ataków
+  # ─────────────────────────────────────────────────────────────────────────
+  assassin:
+    name: "Assassin"
+    description: "Assassins jump to enemy backline and gain mana faster from attacks"
+    
+    # Mnożniki generowania many
+    mana_per_attack_multiplier: 1.2    # +20% many z ataków (szybki burst)
+    mana_from_damage_multiplier: 0.8   # -20% many z damage (mniej tanky)
+    mana_per_second_bonus: 0
+    
+    # Targeting - zawsze celuj w backline
+    default_target_selector: "backline"
+    
+  # ─────────────────────────────────────────────────────────────────────────
+  # GUARDIAN
+  # ─────────────────────────────────────────────────────────────────────────
+  # Tanki - więcej many z otrzymanych obrażeń, celują we frontline
+  # ─────────────────────────────────────────────────────────────────────────
+  guardian:
+    name: "Guardian"
+    description: "Guardians gain more mana when taking damage and target frontline"
+    
+    # Mnożniki generowania many
+    mana_per_attack_multiplier: 0.8    # -20% many z ataków
+    mana_from_damage_multiplier: 1.5   # +50% many z damage (więcej = szybszy skill)
+    mana_per_second_bonus: 0
+    
+    # Targeting - tauntuj frontline
+    default_target_selector: "frontline"
+    
+  # ─────────────────────────────────────────────────────────────────────────
+  # MARKSMAN
+  # ─────────────────────────────────────────────────────────────────────────
+  # Łucznicy - standardowa mana, celują w najdalszego
+  # ─────────────────────────────────────────────────────────────────────────
+  marksman:
+    name: "Marksman"
+    description: "Marksmen target the farthest enemy for safe positioning"
+    
+    # Mnożniki generowania many (standardowe)
+    mana_per_attack_multiplier: 1.0
+    mana_from_damage_multiplier: 1.0
+    mana_per_second_bonus: 0
+    
+    # Targeting - celuj w najdalszego
+    default_target_selector: "farthest"
+    
+  # ─────────────────────────────────────────────────────────────────────────
+  # EXECUTIONER
+  # ─────────────────────────────────────────────────────────────────────────
+  # Dobijacze - celują w jednostki z niskim HP
+  # ─────────────────────────────────────────────────────────────────────────
+  executioner:
+    name: "Executioner"
+    description: "Executioners target the lowest HP enemy to secure kills"
+    
+    # Mnożniki generowania many
+    mana_per_attack_multiplier: 1.1    # +10% many z ataków
+    mana_from_damage_multiplier: 1.0
+    mana_per_second_bonus: 0
+    
+    # Targeting - dobijaj rannych
+    default_target_selector: "lowest_hp_percent"
+    
+  # ─────────────────────────────────────────────────────────────────────────
+  # SUPPORT
+  # ─────────────────────────────────────────────────────────────────────────
+  # Supporty - zaczynają z zablokowaną maną, pasywna regeneracja
+  # ─────────────────────────────────────────────────────────────────────────
+  support:
+    name: "Support"
+    description: "Supports start mana-locked but gain passive mana regen"
+    
+    # Mnożniki generowania many
+    mana_per_attack_multiplier: 0.6    # -40% many z ataków
+    mana_from_damage_multiplier: 1.0
+    mana_per_second_bonus: 8           # wysoka pasywna regen
+    
+    # Specjalne zachowanie
+    starts_mana_locked: true           # zaczyna z mana lock (szybszy pierwszy cast po locku)
+    mana_lock_duration_start: 30       # 1 sekunda lock na starcie
+    
+  # ─────────────────────────────────────────────────────────────────────────
+  # BRAWLER  
+  # ─────────────────────────────────────────────────────────────────────────
+  # Wojownicy - balansowane generowanie many
+  # ─────────────────────────────────────────────────────────────────────────
+  brawler:
+    name: "Brawler"
+    description: "Brawlers have balanced mana generation"
+    
+    # Mnożniki generowania many (lekko wzmocnione)
+    mana_per_attack_multiplier: 1.1    # +10%
+    mana_from_damage_multiplier: 1.1   # +10%
+    mana_per_second_bonus: 0

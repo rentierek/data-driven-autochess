@@ -1,0 +1,167 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# DEFINICJE PRZEDMIOTÓW
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Przedmioty dają pasywne bonusy do statystyk i mogą mieć specjalne efekty.
+# ═══════════════════════════════════════════════════════════════════════════
+
+items:
+  # ─────────────────────────────────────────────────────────────────────────
+  # KOMPONENTY (Basic Items)
+  # ─────────────────────────────────────────────────────────────────────────
+  bf_sword:
+    name: "B.F. Sword"
+    tier: "component"
+    stats:
+      attack_damage:
+        type: "flat"
+        value: 15
+  
+  recurve_bow:
+    name: "Recurve Bow"
+    tier: "component"
+    stats:
+      attack_speed:
+        type: "percent"
+        value: 0.15          # +15% AS
+  
+  needlessly_large_rod:
+    name: "Needlessly Large Rod"
+    tier: "component"
+    stats:
+      ability_power:
+        type: "flat"
+        value: 20
+  
+  chain_vest:
+    name: "Chain Vest"
+    tier: "component"
+    stats:
+      armor:
+        type: "flat"
+        value: 25
+  
+  negatron_cloak:
+    name: "Negatron Cloak"
+    tier: "component"
+    stats:
+      magic_resist:
+        type: "flat"
+        value: 25
+  
+  giants_belt:
+    name: "Giant's Belt"
+    tier: "component"
+    stats:
+      hp:
+        type: "flat"
+        value: 200
+  
+  sparring_gloves:
+    name: "Sparring Gloves"
+    tier: "component"
+    stats:
+      crit_chance:
+        type: "flat"
+        value: 0.10          # +10% crit
+      dodge_chance:
+        type: "flat"
+        value: 0.10          # +10% dodge
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # GOTOWE PRZEDMIOTY (Completed Items)
+  # ─────────────────────────────────────────────────────────────────────────
+  
+  infinity_edge:
+    name: "Infinity Edge"
+    tier: "completed"
+    recipe:
+      - bf_sword
+      - sparring_gloves
+    stats:
+      attack_damage:
+        type: "flat"
+        value: 15
+      crit_chance:
+        type: "flat"
+        value: 0.35          # +35% crit (75% z base)
+      crit_damage:
+        type: "flat"
+        value: 0.3           # +30% crit damage
+  
+  bloodthirster:
+    name: "Bloodthirster"
+    tier: "completed"
+    recipe:
+      - bf_sword
+      - negatron_cloak
+    stats:
+      attack_damage:
+        type: "flat"
+        value: 15
+      magic_resist:
+        type: "flat"
+        value: 25
+      lifesteal:
+        type: "flat"
+        value: 0.25          # 25% lifesteal
+  
+  rapid_firecannon:
+    name: "Rapid Firecannon"
+    tier: "completed"
+    recipe:
+      - recurve_bow
+      - recurve_bow
+    stats:
+      attack_speed:
+        type: "percent"
+        value: 0.55          # +55% AS
+    special_effects:
+      - type: "attack_range"
+        value: 2             # +2 range
+  
+  warmogs_armor:
+    name: "Warmog's Armor"
+    tier: "completed"
+    recipe:
+      - giants_belt
+      - giants_belt
+    stats:
+      hp:
+        type: "flat"
+        value: 1000
+    special_effects:
+      - type: "regen"
+        percent_max_hp: 0.02  # 2% max HP/s
+  
+  rabadons_deathcap:
+    name: "Rabadon's Deathcap"
+    tier: "completed"
+    recipe:
+      - needlessly_large_rod
+      - needlessly_large_rod
+    stats:
+      ability_power:
+        type: "flat"
+        value: 40
+      ability_power:
+        type: "percent"
+        value: 0.5           # +50% AP
+  
+  guardian_angel:
+    name: "Guardian Angel"
+    tier: "completed"
+    recipe:
+      - bf_sword
+      - chain_vest
+    stats:
+      attack_damage:
+        type: "flat"
+        value: 15
+      armor:
+        type: "flat"
+        value: 25
+    special_effects:
+      - type: "revive"
+        hp_percent: 0.4      # Revive z 40% HP
+        cooldown_seconds: 0  # Raz na walkę

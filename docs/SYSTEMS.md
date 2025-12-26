@@ -528,3 +528,201 @@ warrior:
   ability: "shield_bash"
   mana_class: "guardian"  # opcjonalne
 ```
+
+---
+
+## System Umiejętności
+
+**Pliki:** `src/abilities/ability.py`, `src/abilities/effect.py`, `src/abilities/scaling.py`, `src/abilities/projectile.py`, `src/abilities/aoe.py`
+
+### Przegląd
+
+System umiejętności obsługuje:
+
+- **19 typów efektów** (damage, heal, stun, burn, etc.)
+- **Star scaling** - wartości per 1★/2★/3★
+- **Stat scaling** - skalowanie z AD/AP/Armor/MR/HP
+- **Projectiles** - homing, miss-on-death
+- **AoE** - circle, cone, line
+
+### 19 Typów Efektów
+
+| Kategoria | Typ | Parametry | Opis |
+|-----------|-----|-----------|------|
+| **Offensive** | `damage` | value, damage_type, scaling | Jednorazowe obrażenia |
+| | `dot` | value, duration, interval | Damage Over Time |
+| | `burn` | value, duration | TRUE damage/s |
+| | `execute` | threshold | Zabija poniżej % HP |
+| | `sunder` | value, duration | Redukuje Armor |
+| | `shred` | value, duration | Redukuje MR |
+| **CC** | `stun` | duration | Całkowite wyłączenie |
+| | `slow` | value, duration | Slow AS |
+| | `silence` | duration | Blokada spelli |
+| | `disarm` | duration | Blokada auto-ataków |
+| **Support** | `heal` | value, scaling | Przywraca HP |
+| | `shield` | value, duration | Tymczasowe HP |
+| | `wound` | value, duration | Redukcja leczenia % |
+| | `buff` | stat, value, duration | Tymczasowy bonus |
+| | `mana_grant` | value | Daje manę |
+| | `cleanse` | target | Usuwa debuffs |
+| **Displacement** | `knockback` | distance, stun_duration | Odpycha cel |
+| | `pull` | distance | Przyciąga cel |
+| | `dash` | distance, direction | Dash castera |
+
+### Skalowanie
+
+```
+final_value = value[star_level] × (caster_stat / 100)
+
+Przykład:
+  value: [200, 350, 600], scaling: "ap"
+  Caster 2★ z 150 AP
+  → 350 × 1.5 = 525 damage
+```
+
+**Typy skalowania:**
+
+| Typ | Statystyka | Użycie |
+|-----|------------|--------|
+| `ad` | Attack Damage | Fizyczne skille |
+| `ap` | Ability Power | Magiczne skille |
+| `armor` | Armor | Defensive shieldy |
+| `mr` | Magic Resist | Defensive heale |
+| `max_hp` | Max HP celu | % HP damage |
+| `missing_hp` | Brakujące HP | Execute, heale |
+| `caster_hp` | HP castera | Tank skille |
+
+### Definicja Ability (YAML)
+
+```yaml
+# abilities.yaml
+fireball:
+  name: "Fireball"
+  mana_cost: 80
+  cast_time: [20, 18, 15]    # ticks per star
+  target_type: "current_target"
+  delivery: "projectile"
+  projectile:
+    speed: 3
+    homing: true
+    can_miss: true
+  effects:
+    - type: "damage"
+      damage_type: "magical"
+      value: [200, 350, 600]
+      scaling: "ap"
+    - type: "burn"
+      value: [20, 35, 60]
+      duration: 90
+
+heal_wave:
+  name: "Heal Wave"
+  mana_cost: 70
+  target_type: "lowest_hp_ally"
+  delivery: "instant"
+  aoe:
+    type: "circle"
+    radius: 2
+  effects:
+    - type: "heal"
+      value: [150, 250, 400]
+      scaling: "ap"
+    - type: "shield"
+      value: [100, 175, 300]
+      duration: 120
+```
+
+### Projectile System
+
+```python
+from src.abilities import Projectile, ProjectileManager
+
+manager = ProjectileManager()
+
+# Spawn projectile
+proj = manager.spawn(source=caster, target=target, ability=ability, star_level=2)
+
+# Each tick: update positions, get arrivals
+arrived = manager.tick()
+for proj in arrived:
+    # Apply effects on hit
+    apply_ability_effects(proj.source, proj.target, proj.ability)
+```
+
+**Atrybuty projektilu:**
+
+| Atrybut | Typ | Opis |
+|---------|-----|------|
+| `speed` | float | Hexów per tick |
+| `homing` | bool | Czy śledzi cel |
+| `can_miss` | bool | Czy pudłuje gdy cel zginie |
+
+### AoE System
+
+```python
+from src.abilities.aoe import get_units_in_circle, get_units_in_cone, get_units_in_line
+
+# Circle AoE
+targets = get_units_in_circle(center, radius=2, units=enemies)
+
+# Cone AoE (60° angle)
+targets = get_units_in_cone(origin, target, angle=60, range_=3, units=enemies)
+
+# Line AoE
+targets = get_units_in_line(origin, target, width=1, units=enemies)
+```
+
+### Użycie w Kodzie
+
+```python
+from src.abilities import Ability, EFFECT_REGISTRY, create_effect
+
+# Load ability
+ability = Ability.from_dict("fireball", loader.load_ability("fireball"))
+
+# Get cast time for star level
+cast_time = ability.get_cast_time(star_level=2)
+
+# Execute ability
+for effect in ability.effects:
+    result = effect.apply(caster, target, star_level=2, simulation=sim)
+    if result.success:
+        print(f"{effect.effect_type}: {result.value}")
+```
+
+---
+
+## Quick Reference
+
+### Uruchomienie Symulacji
+
+```bash
+python main.py --seed 12345 --verbose
+python test_8v8_battle.py --seed 42
+```
+
+### Kluczowe Parametry (defaults.yaml)
+
+```yaml
+simulation:
+  ticks_per_second: 30
+  max_ticks: 3000
+  grid_width: 7
+  grid_height: 8
+
+mana_generation:
+  mana_per_attack: 10
+  mana_from_damage: {pre: 0.01, post: 0.03, cap: 42.5}
+
+casting_defaults:
+  base_cast_time_ticks: 15
+
+champion_classes:
+  enabled: true
+```
+
+### Testy
+
+```bash
+pytest tests/ -v  # 88 tests
+```

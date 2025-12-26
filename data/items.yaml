@@ -20,7 +20,8 @@ items:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # KOMPONENTY (PODSTAWOWE ITEMY)
-  # Wszystkie komponenty dają PROCENTOWE bonusy (z bazy), nie flat!
+  # AD/AP = procentowe bonusy (z bazy)
+  # Armor/MR/HP = flat bonusy
   # ═══════════════════════════════════════════════════════════════════════════
   
   bf_sword:
@@ -37,21 +38,21 @@ items:
   
   chain_vest:
     name: "Chain Vest"
-    description: "+20% Armor"
+    description: "+20 Armor"
     stats:
-      armor_percent: 0.20
+      armor: 20
   
   negatron_cloak:
     name: "Negatron Cloak"
-    description: "+20% Magic Resist"
+    description: "+20 Magic Resist"
     stats:
-      mr_percent: 0.20
+      magic_resist: 20
   
   giants_belt:
     name: "Giant's Belt"
-    description: "+10% HP"
+    description: "+150 HP"
     stats:
-      hp_percent: 0.10
+      hp: 150
   
   recurve_bow:
     name: "Recurve Bow"

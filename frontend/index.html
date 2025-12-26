@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TFT Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --hex-size: 45px;
+            --hex-height: calc(var(--hex-size) * 1.732);
+            --hex-width: calc(var(--hex-size) * 2);
+        }
+        
+        .hex {
+            width: var(--hex-width);
+            height: var(--hex-height);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: absolute;
+        }
+        
+        .hex.team0 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .hex.team1 { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        .hex.empty { background: linear-gradient(135deg, #374151, #1f2937); }
+        .hex:hover { transform: scale(1.1); z-index: 10; }
+        .hex.selected { box-shadow: 0 0 15px 5px #facc15; }
+        
+        .unit-card {
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .unit-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .unit-card.dragging {
+            opacity: 0.5;
+        }
+        
+        .trait-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .trait-active { background: linear-gradient(135deg, #facc15, #f59e0b); color: #000; }
+        .trait-inactive { background: #374151; color: #9ca3af; }
+        
+        .item-slot {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #4b5563;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        
+        .star { color: #facc15; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                TFT Simulator
+            </h1>
+            <p class="text-gray-400">Composition Editor & Battle Simulator</p>
+        </header>
+        
+        <div class="grid grid-cols-12 gap-4">
+            <!-- Left Panel: Units -->
+            <div class="col-span-3 bg-gray-800 rounded-lg p-4">
+                <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <span>📋</span> Available Units
+                </h2>
+                <div id="unitList" class="space-y-2 max-h-96 overflow-y-auto">
+                    <!-- Units loaded here -->
+                </div>
+            </div>
+            
+            <!-- Center: Board -->
+            <div class="col-span-6">
+                <!-- Team 1 (Enemy) -->
+                <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                    <h3 class="text-red-400 text-sm font-semibold mb-2">🔴 Team 1 (Enemy)</h3>
+                    <div id="board-team1" class="relative" style="height: 280px;">
+                        <!-- Hex grid for team 1 -->
+                    </div>
+                </div>
+                
+                <!-- Team 0 (Player) -->
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <h3 class="text-blue-400 text-sm font-semibold mb-2">🔵 Team 0 (Player)</h3>
+                    <div id="board-team0" class="relative" style="height: 280px;">
+                        <!-- Hex grid for team 0 -->
+                    </div>
+                </div>
+                
+                <!-- Battle Controls -->
+                <div class="mt-4 flex gap-2 justify-center">
+                    <button id="btnBattle" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg font-bold hover:scale-105 transition">
+                        ⚔️ START BATTLE
+                    </button>
+                    <button id="btnClear" class="px-4 py-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                        🗑️ Clear Board
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Synergies & Items -->
+            <div class="col-span-3 space-y-4">
+                <!-- Synergies -->
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span>✨</span> Active Synergies
+                    </h2>
+                    <div id="synergyList" class="space-y-2">
+                        <p class="text-gray-500 text-sm">Place units to see synergies</p>
+                    </div>
+                </div>
+                
+                <!-- Items -->
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span>🗡️</span> Items
+                    </h2>
+                    <div id="itemList" class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                        <!-- Items loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Selected Unit Info -->
+                <div id="selectedUnitPanel" class="bg-gray-800 rounded-lg p-4 hidden">
+                    <h2 class="text-lg font-semibold mb-3">Unit Details</h2>
+                    <div id="selectedUnitInfo"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Battle Result Modal -->
+        <div id="battleModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+            <div class="bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4">
+                <h2 class="text-2xl font-bold mb-4">⚔️ Battle Result</h2>
+                <div id="battleResult"></div>
+                <button id="btnCloseModal" class="mt-4 px-4 py-2 bg-blue-600 rounded hover:bg-blue-500">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ═══════════════════════════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const API_URL = 'http://localhost:8000/api';
+        
+        let state = {
+            units: [],
+            items: [],
+            traits: [],
+            board: {
+                team0: {}, // {`${q},${r}`: {unitId, starLevel, items}}
+                team1: {},
+            },
+            selectedUnit: null,
+            draggedUnit: null,
+        };
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // HEX MATH
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const HEX_SIZE = 45;
+        const HEX_WIDTH = HEX_SIZE * 2;
+        const HEX_HEIGHT = HEX_SIZE * Math.sqrt(3);
+        
+        function hexToPixel(q, r) {
+            // Odd-r offset
+            const x = HEX_SIZE * 1.5 * q + (r % 2 === 1 ? HEX_SIZE * 0.75 : 0);
+            const y = HEX_HEIGHT * 0.5 * r;
+            return { x: x + 30, y: y + 20 };
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // RENDERING
+        // ═══════════════════════════════════════════════════════════════════
+        
+        function renderBoard() {
+            renderTeamBoard('team0', 0, [0, 1, 2, 3]);
+            renderTeamBoard('team1', 1, [4, 5, 6, 7]);
+        }
+        
+        function renderTeamBoard(containerId, team, rows) {
+            const container = document.getElementById(`board-${containerId}`);
+            container.innerHTML = '';
+            
+            rows.forEach(r => {
+                const maxQ = r % 2 === 0 ? 7 : 6;
+                for (let q = 0; q < maxQ; q++) {
+                    const pos = hexToPixel(q, r - rows[0]);
+                    const key = `${q},${r}`;
+                    const placement = state.board[containerId][key];
+                    
+                    const hex = document.createElement('div');
+                    hex.className = `hex ${placement ? (team === 0 ? 'team0' : 'team1') : 'empty'}`;
+                    hex.style.left = `${pos.x}px`;
+                    hex.style.top = `${pos.y}px`;
+                    hex.dataset.q = q;
+                    hex.dataset.r = r;
+                    hex.dataset.team = containerId;
+                    
+                    if (placement) {
+                        const unit = state.units.find(u => u.id === placement.unitId);
+                        hex.innerHTML = `
+                            <div class="text-center">
+                                <div class="font-bold">${unit?.name?.substring(0, 4) || '?'}</div>
+                                <div class="star">${'★'.repeat(placement.starLevel)}</div>
+                            </div>
+                        `;
+                    } else {
+                        hex.innerHTML = `<span class="text-gray-600 text-xs">${q},${r}</span>`;
+                    }
+                    
+                    hex.addEventListener('click', () => onHexClick(containerId, q, r));
+                    hex.addEventListener('dragover', (e) => e.preventDefault());
+                    hex.addEventListener('drop', (e) => onHexDrop(e, containerId, q, r));
+                    
+                    container.appendChild(hex);
+                }
+            });
+        }
+        
+        function renderUnitList() {
+            const container = document.getElementById('unitList');
+            container.innerHTML = '';
+            
+            state.units.forEach(unit => {
+                const card = document.createElement('div');
+                card.className = 'unit-card bg-gray-700 rounded p-2 flex items-center gap-2';
+                card.draggable = true;
+                card.dataset.unitId = unit.id;
+                
+                card.innerHTML = `
+                    <div class="w-10 h-10 bg-gray-600 rounded flex items-center justify-center font-bold">
+                        ${unit.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-sm">${unit.name}</div>
+                        <div class="text-xs text-gray-400">${unit.traits.join(', ')}</div>
+                    </div>
+                `;
+                
+                card.addEventListener('dragstart', (e) => {
+                    state.draggedUnit = unit.id;
+                    card.classList.add('dragging');
+                });
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                });
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function renderItems() {
+            const container = document.getElementById('itemList');
+            container.innerHTML = '';
+            
+            state.items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'item-slot bg-gray-700 hover:bg-gray-600 cursor-pointer';
+                el.title = `${item.name}\n${item.description}`;
+                el.innerHTML = item.name.substring(0, 2).toUpperCase();
+                container.appendChild(el);
+            });
+        }
+        
+        function renderSynergies() {
+            const container = document.getElementById('synergyList');
+            
+            // Collect all units on board
+            const unitIds = [];
+            Object.values(state.board.team0).forEach(p => unitIds.push(p.unitId));
+            
+            if (unitIds.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Place units to see synergies</p>';
+                return;
+            }
+            
+            // Calculate synergies locally
+            const traitCounts = {};
+            unitIds.forEach(unitId => {
+                const unit = state.units.find(u => u.id === unitId);
+                if (unit) {
+                    unit.traits.forEach(trait => {
+                        traitCounts[trait] = (traitCounts[trait] || 0) + 1;
+                    });
+                }
+            });
+            
+            container.innerHTML = '';
+            Object.entries(traitCounts).sort((a, b) => b[1] - a[1]).forEach(([trait, count]) => {
+                const traitDef = state.traits.find(t => t.id === trait);
+                const thresholds = traitDef?.thresholds.map(t => t.count) || [];
+                const activeThreshold = thresholds.filter(t => count >= t).pop();
+                
+                const badge = document.createElement('div');
+                badge.className = `trait-badge ${activeThreshold ? 'trait-active' : 'trait-inactive'} flex justify-between items-center`;
+                badge.innerHTML = `
+                    <span>${traitDef?.name || trait}</span>
+                    <span class="font-bold">${count}/${thresholds.join('/')}</span>
+                `;
+                container.appendChild(badge);
+            });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // EVENTS
+        // ═══════════════════════════════════════════════════════════════════
+        
+        function onHexClick(team, q, r) {
+            const key = `${q},${r}`;
+            const placement = state.board[team][key];
+            
+            if (placement) {
+                // Remove unit
+                delete state.board[team][key];
+            }
+            
+            renderBoard();
+            renderSynergies();
+        }
+        
+        function onHexDrop(e, team, q, r) {
+            e.preventDefault();
+            if (!state.draggedUnit) return;
+            
+            const key = `${q},${r}`;
+            state.board[team][key] = {
+                unitId: state.draggedUnit,
+                starLevel: 1,
+                items: [],
+            };
+            state.draggedUnit = null;
+            
+            renderBoard();
+            renderSynergies();
+        }
+        
+        async function onBattle() {
+            const btn = document.getElementById('btnBattle');
+            btn.disabled = true;
+            btn.textContent = '⏳ Simulating...';
+            
+            try {
+                // Convert board state to API format
+                const team0 = Object.entries(state.board.team0).map(([key, placement]) => {
+                    const [q, r] = key.split(',').map(Number);
+                    return {
+                        unit_id: placement.unitId,
+                        position: [q, r],
+                        star_level: placement.starLevel,
+                        items: placement.items,
+                    };
+                });
+                
+                const team1 = Object.entries(state.board.team1).map(([key, placement]) => {
+                    const [q, r] = key.split(',').map(Number);
+                    return {
+                        unit_id: placement.unitId,
+                        position: [q, r],
+                        star_level: placement.starLevel,
+                        items: placement.items,
+                    };
+                });
+                
+                const response = await fetch(`${API_URL}/simulate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ team0, team1 }),
+                });
+                
+                const data = await response.json();
+                showBattleResult(data);
+            } catch (error) {
+                console.error('Battle error:', error);
+                showBattleResult({ error: error.message });
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '⚔️ START BATTLE';
+        }
+        
+        function showBattleResult(data) {
+            const modal = document.getElementById('battleModal');
+            const resultDiv = document.getElementById('battleResult');
+            
+            if (data.error) {
+                resultDiv.innerHTML = `<p class="text-red-400">Error: ${data.error}</p>`;
+            } else {
+                const result = data.result || {};
+                const winner = result.winner_team;
+                const winnerColor = winner === 0 ? 'text-blue-400' : 'text-red-400';
+                const winnerText = winner === 0 ? 'Team 0 (Player)' : 'Team 1 (Enemy)';
+                
+                resultDiv.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="text-center">
+                            <span class="text-4xl">🏆</span>
+                            <h3 class="text-xl font-bold ${winnerColor}">${winnerText} Wins!</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-700 p-3 rounded">
+                                <div class="text-gray-400">Duration</div>
+                                <div class="font-bold">${(result.total_ticks / 30).toFixed(1)}s</div>
+                            </div>
+                            <div class="bg-gray-700 p-3 rounded">
+                                <div class="text-gray-400">Survivors</div>
+                                <div class="font-bold">${result.survivors?.length || 0}</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            Seed: ${data.seed} | Events: ${data.total_events}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function onClearBoard() {
+            state.board = { team0: {}, team1: {} };
+            renderBoard();
+            renderSynergies();
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════════
+        
+        async function loadData() {
+            try {
+                const [unitsRes, itemsRes, traitsRes] = await Promise.all([
+                    fetch(`${API_URL}/units`),
+                    fetch(`${API_URL}/items`),
+                    fetch(`${API_URL}/traits`),
+                ]);
+                
+                state.units = await unitsRes.json();
+                state.items = await itemsRes.json();
+                state.traits = await traitsRes.json();
+                
+                renderUnitList();
+                renderItems();
+                renderBoard();
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                // Use mock data
+                state.units = [
+                    { id: 'guardian', name: 'Guardian', traits: ['guardian', 'warrior'] },
+                    { id: 'warrior', name: 'Warrior', traits: ['warrior'] },
+                    { id: 'archer', name: 'Archer', traits: ['marksman'] },
+                    { id: 'fire_mage', name: 'Fire Mage', traits: ['mage'] },
+                ];
+                state.items = [
+                    { id: 'bf_sword', name: 'BF Sword', description: '+10% AD' },
+                ];
+                state.traits = [
+                    { id: 'guardian', name: 'Guardian', thresholds: [{ count: 2 }, { count: 4 }] },
+                    { id: 'mage', name: 'Mage', thresholds: [{ count: 2 }, { count: 4 }] },
+                ];
+                
+                renderUnitList();
+                renderItems();
+                renderBoard();
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('btnBattle').addEventListener('click', onBattle);
+        document.getElementById('btnClear').addEventListener('click', onClearBoard);
+        document.getElementById('btnCloseModal').addEventListener('click', () => {
+            document.getElementById('battleModal').classList.add('hidden');
+            document.getElementById('battleModal').classList.remove('flex');
+        });
+        
+        // Start
+        loadData();
+    </script>
+</body>
+</html>

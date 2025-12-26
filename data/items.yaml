@@ -2,166 +2,286 @@
 # DEFINICJE PRZEDMIOTÓW
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# Przedmioty dają pasywne bonusy do statystyk i mogą mieć specjalne efekty.
+# System procentowych statystyk:
+#   ad_percent: 0.35 = +35% bazowego AD
+#   ap_percent: 0.50 = +50% bazowego AP
+#   
+# Każdy item może mieć:
+#   - stats: flat lub percent bonusy
+#   - effects: triggerowane efekty (on_hit, on_ability_cast, etc.)
+#   - conditional_effects: efekty warunkowe (Giant Slayer, etc.)
+#   - flags: specjalne flagi (ability_crit, etc.)
+#   - grants_traits: traity nadawane przez item
+#   - unique: true = tylko jeden taki item per jednostka
+#
 # ═══════════════════════════════════════════════════════════════════════════
 
 items:
-  # ─────────────────────────────────────────────────────────────────────────
-  # KOMPONENTY (Basic Items)
-  # ─────────────────────────────────────────────────────────────────────────
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # KOMPONENTY (PODSTAWOWE ITEMY)
+  # Wszystkie komponenty dają PROCENTOWE bonusy (z bazy), nie flat!
+  # ═══════════════════════════════════════════════════════════════════════════
+  
   bf_sword:
     name: "B.F. Sword"
-    tier: "component"
+    description: "+10% Attack Damage"
     stats:
-      attack_damage:
-        type: "flat"
-        value: 15
-  
-  recurve_bow:
-    name: "Recurve Bow"
-    tier: "component"
-    stats:
-      attack_speed:
-        type: "percent"
-        value: 0.15          # +15% AS
+      ad_percent: 0.10
   
   needlessly_large_rod:
     name: "Needlessly Large Rod"
-    tier: "component"
+    description: "+10% Ability Power"
     stats:
-      ability_power:
-        type: "flat"
-        value: 20
+      ap_percent: 0.10
   
   chain_vest:
     name: "Chain Vest"
-    tier: "component"
+    description: "+20% Armor"
     stats:
-      armor:
-        type: "flat"
-        value: 25
+      armor_percent: 0.20
   
   negatron_cloak:
     name: "Negatron Cloak"
-    tier: "component"
+    description: "+20% Magic Resist"
     stats:
-      magic_resist:
-        type: "flat"
-        value: 25
+      mr_percent: 0.20
   
   giants_belt:
     name: "Giant's Belt"
-    tier: "component"
+    description: "+10% HP"
     stats:
-      hp:
-        type: "flat"
-        value: 200
+      hp_percent: 0.10
+  
+  recurve_bow:
+    name: "Recurve Bow"
+    description: "+10% Attack Speed"
+    stats:
+      as_percent: 0.10
+  
+  tear_of_goddess:
+    name: "Tear of the Goddess"
+    description: "+15 Starting Mana"
+    stats:
+      start_mana: 15
   
   sparring_gloves:
     name: "Sparring Gloves"
-    tier: "component"
+    description: "+10% Crit Chance, +10% Dodge Chance"
     stats:
-      crit_chance:
-        type: "flat"
-        value: 0.10          # +10% crit
-      dodge_chance:
-        type: "flat"
-        value: 0.10          # +10% dodge
-  
-  # ─────────────────────────────────────────────────────────────────────────
-  # GOTOWE PRZEDMIOTY (Completed Items)
-  # ─────────────────────────────────────────────────────────────────────────
+      crit_chance: 0.10
+      dodge_chance: 0.10
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMBINED ITEMS - AD FOCUSED
+  # ═══════════════════════════════════════════════════════════════════════════
   
   infinity_edge:
     name: "Infinity Edge"
-    tier: "completed"
-    recipe:
-      - bf_sword
-      - sparring_gloves
+    description: "+35% AD, +35% crit damage. Abilities can crit."
+    components: ["bf_sword", "sparring_gloves"]
     stats:
-      attack_damage:
-        type: "flat"
-        value: 15
-      crit_chance:
-        type: "flat"
-        value: 0.35          # +35% crit (75% z base)
-      crit_damage:
-        type: "flat"
-        value: 0.3           # +30% crit damage
+      ad_percent: 0.35
+      crit_damage: 0.35
+    flags:
+      ability_crit: true
+    unique: true
   
   bloodthirster:
     name: "Bloodthirster"
-    tier: "completed"
-    recipe:
-      - bf_sword
-      - negatron_cloak
+    description: "+20% AD, +25% omnivamp (heal from all damage)."
+    components: ["bf_sword", "negatron_cloak"]
     stats:
-      attack_damage:
-        type: "flat"
-        value: 15
-      magic_resist:
-        type: "flat"
-        value: 25
-      lifesteal:
-        type: "flat"
-        value: 0.25          # 25% lifesteal
+      ad_percent: 0.20
+      omnivamp: 0.25
   
-  rapid_firecannon:
-    name: "Rapid Firecannon"
-    tier: "completed"
-    recipe:
-      - recurve_bow
-      - recurve_bow
+  giant_slayer:
+    name: "Giant Slayer"
+    description: "+10% AD, +10% AS. Deal 20% more damage to targets with >1600 HP."
+    components: ["bf_sword", "recurve_bow"]
     stats:
-      attack_speed:
-        type: "percent"
-        value: 0.55          # +55% AS
-    special_effects:
-      - type: "attack_range"
-        value: 2             # +2 range
-  
-  warmogs_armor:
-    name: "Warmog's Armor"
-    tier: "completed"
-    recipe:
-      - giants_belt
-      - giants_belt
+      ad_percent: 0.10
+      attack_speed: 0.10
+    conditional_effects:
+      - condition:
+          type: "target_max_hp"
+          operator: ">"
+          value: 1600
+        effect:
+          type: "damage_amp"
+          value: 0.20
+
+  titans_resolve:
+    name: "Titan's Resolve"
+    description: "Gain 2 AD per attack, stacking up to 25 times."
+    components: ["chain_vest", "recurve_bow"]
     stats:
-      hp:
-        type: "flat"
-        value: 1000
-    special_effects:
-      - type: "regen"
-        percent_max_hp: 0.02  # 2% max HP/s
+      armor: 20
+      attack_speed: 0.10
+    effects:
+      - trigger: "on_hit"
+        effects:
+          - type: "stacking_stat"
+            stat: "attack_damage"
+            value: 2
+            max_stacks: 25
+            target: "self"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMBINED ITEMS - AP FOCUSED
+  # ═══════════════════════════════════════════════════════════════════════════
   
   rabadons_deathcap:
     name: "Rabadon's Deathcap"
-    tier: "completed"
-    recipe:
-      - needlessly_large_rod
-      - needlessly_large_rod
+    description: "+50% AP. More magic power!"
+    components: ["needlessly_large_rod", "needlessly_large_rod"]
     stats:
-      ability_power:
-        type: "flat"
-        value: 40
-      ability_power:
-        type: "percent"
-        value: 0.5           # +50% AP
+      ap_percent: 0.50
+    unique: true
   
-  guardian_angel:
-    name: "Guardian Angel"
-    tier: "completed"
-    recipe:
-      - bf_sword
-      - chain_vest
+  jeweled_gauntlet:
+    name: "Jeweled Gauntlet"
+    description: "+10% AP, +20% crit chance. Abilities can deal critical damage."
+    components: ["sparring_gloves", "needlessly_large_rod"]
     stats:
-      attack_damage:
-        type: "flat"
-        value: 15
-      armor:
-        type: "flat"
-        value: 25
-    special_effects:
-      - type: "revive"
-        hp_percent: 0.4      # Revive z 40% HP
-        cooldown_seconds: 0  # Raz na walkę
+      ap_percent: 0.10
+      crit_chance: 0.20
+    flags:
+      ability_crit: true
+  
+  hextech_gunblade:
+    name: "Hextech Gunblade"
+    description: "+10% AP, +10% AD, +25% omnivamp."
+    components: ["bf_sword", "needlessly_large_rod"]
+    stats:
+      ad_percent: 0.10
+      ap_percent: 0.10
+      omnivamp: 0.25
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMBINED ITEMS - UTILITY / MANA
+  # ═══════════════════════════════════════════════════════════════════════════
+  
+  blue_buff:
+    name: "Blue Buff"
+    description: "+10 starting mana. After casting, gain 10 mana."
+    components: ["tear_of_goddess", "tear_of_goddess"]
+    stats:
+      start_mana: 10
+    effects:
+      - trigger: "on_ability_cast"
+        effects:
+          - type: "mana_grant"
+            value: 10
+            target: "self"
+    unique: true
+  
+  shojin:
+    name: "Spear of Shojin"
+    description: "+10 AD, +15 mana. Attacks restore 5 mana."
+    components: ["bf_sword", "tear_of_goddess"]
+    stats:
+      attack_damage: 10
+      start_mana: 15
+    effects:
+      - trigger: "on_hit"
+        effects:
+          - type: "mana_grant"
+            value: 5
+            target: "self"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMBINED ITEMS - TANK
+  # ═══════════════════════════════════════════════════════════════════════════
+  
+  warmogs_armor:
+    name: "Warmog's Armor"
+    description: "+500 HP. Regenerate 2% max HP per second."
+    components: ["giants_belt", "giants_belt"]
+    stats:
+      hp: 500
+    effects:
+      - trigger: "on_interval"
+        trigger_params:
+          interval: 30  # 1 second at 30 TPS
+        effects:
+          - type: "heal"
+            value: 0  # Will need custom handling for % max HP
+            target: "self"
+            percent_max_hp: 0.02
+  
+  bramble_vest:
+    name: "Bramble Vest"
+    description: "+40 Armor. When hit, deal 75 magic damage to attacker."
+    components: ["chain_vest", "chain_vest"]
+    stats:
+      armor: 40
+    effects:
+      - trigger: "on_take_damage"
+        effects:
+          - type: "damage"
+            value: 75
+            damage_type: "magic"
+            target: "attacker"
+
+  frozen_heart:
+    name: "Frozen Heart"
+    description: "+25 Armor, +25 MR. Slow nearby enemies by 20%."
+    components: ["chain_vest", "negatron_cloak"]
+    stats:
+      armor: 25
+      magic_resist: 25
+    effects:
+      - trigger: "on_interval"
+        trigger_params:
+          interval: 60  # 2 seconds
+        effects:
+          - type: "slow"
+            value: 0.20
+            duration: 30
+            target: "enemies_in_range"
+            range: 2
+    grants_traits: ["mystic"]  # Gives Mystic trait!
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMBINED ITEMS - SPECIAL
+  # ═══════════════════════════════════════════════════════════════════════════
+  
+  hand_of_justice:
+    name: "Hand of Justice"
+    description: "+15% AD, +15% AP, +15% omnivamp."
+    components: ["sparring_gloves", "tear_of_goddess"]
+    stats:
+      ad_percent: 0.15
+      ap_percent: 0.15
+      omnivamp: 0.15
+  
+  last_whisper:
+    name: "Last Whisper"
+    description: "+10% AD. Deal 30% more damage to targets with shield."
+    components: ["bf_sword", "sparring_gloves"]
+    stats:
+      ad_percent: 0.10
+    conditional_effects:
+      - condition:
+          type: "target_has_shield"
+          operator: ">"
+          value: 0
+        effect:
+          type: "damage_amp"
+          value: 0.30
+
+  dragons_claw:
+    name: "Dragon's Claw"
+    description: "+60 MR. Heal for 5% max HP when hit by ability."
+    components: ["negatron_cloak", "negatron_cloak"]
+    stats:
+      magic_resist: 60
+    effects:
+      - trigger: "on_take_damage"
+        trigger_params:
+          from_ability: true
+        effects:
+          - type: "heal"
+            target: "self"
+            percent_max_hp: 0.05

@@ -14,6 +14,7 @@
 10. [System Eventów](#system-eventów)
 11. [System Umiejętności](#system-umiejętności)
 12. [System Traitów](#system-traitów)
+13. [System Przedmiotów](#system-przedmiotów)
 
 ---
 
@@ -897,4 +898,140 @@ on death:
   on_unit_death(unit)
     └─> Check ON_DEATH triggers
     └─> Recount traits (unit removed)
+```
+
+---
+
+## System Przedmiotów
+
+**Pliki:** `src/items/item.py`, `src/items/item_manager.py`, `data/items.yaml`
+
+### Procentowe Statystyki (Kluczowa Mechanika)
+
+```yaml
+infinity_edge:
+  stats:
+    ad_percent: 0.35  # +35% bazowego AD
+    crit_damage: 0.35
+  flags:
+    ability_crit: true
+```
+
+**Formuła:** `effective_stat = (base * (1 + percent_bonus)) + flat_bonus`
+
+Przykład: Unit z 50 AD + Infinity Edge (+35% AD)
+
+- Efektywne AD = 50 * 1.35 = **67.5**
+
+### Typy Statystyk
+
+| Typ | Przykład | Opis |
+|-----|----------|------|
+| Flat | `attack_damage: 10` | +10 AD |
+| Percent | `ad_percent: 0.35` | +35% bazowego AD |
+| Special | `omnivamp: 0.25` | 25% heal z zadanych obrażeń |
+
+### Flagi Specjalne
+
+| Flaga | Efekt |
+|-------|-------|
+| `ability_crit: true` | Ability może krytować (Jeweled Gauntlet) |
+| `unique: true` | Tylko jeden taki item per jednostka |
+
+### Słoty
+
+- **3 sloty** na jednostkę
+- `unique` items nie mogą się duplikować
+
+### Triggery (Te same co Traits)
+
+| Trigger | Kiedy? |
+|---------|--------|
+| `on_equip` | Start walki |
+| `on_hit` | Podstawowy atak |
+| `on_ability_cast` | Po cascie ability |
+| `on_interval` | Co X ticków |
+| `on_take_damage` | Gdy otrzyma obrażenia |
+| `on_kill` | Po zabiciu wroga |
+
+### Efekty Warunkowe (Conditional)
+
+```yaml
+giant_slayer:
+  conditional_effects:
+    - condition:
+        type: "target_max_hp"
+        operator: ">"
+        value: 1600
+      effect:
+        type: "damage_amp"
+        value: 0.20  # +20% dmg vs tanki
+```
+
+**Typy warunków:**
+
+- `target_max_hp`, `target_hp_percent`
+- `self_max_hp`, `self_hp_percent`
+- `target_has_shield`
+
+### Grants Traits
+
+```yaml
+frozen_heart:
+  stats:
+    armor: 25
+  grants_traits: ["mystic"]  # Nadaje trait!
+```
+
+### Przykładowe Itemy (15)
+
+**Komponenty (8):**
+
+| Item | Stat |
+|------|------|
+| BF Sword | +10 AD |
+| Rod | +10 AP |
+| Chain Vest | +20 Armor |
+| Negatron Cloak | +20 MR |
+| Giant's Belt | +150 HP |
+| Recurve Bow | +10% AS |
+| Tear | +15 Starting Mana |
+| Sparring Gloves | +10% Crit, +10% Dodge |
+
+**Combined (7):**
+
+| Item | Efekt |
+|------|-------|
+| Infinity Edge | +35% AD, +35% crit dmg, abilities can crit |
+| Rabadon's | +50% AP |
+| Giant Slayer | +20% dmg vs >1600 HP |
+| Bloodthirster | +20% AD, +25% omnivamp |
+| Blue Buff | +10 mana po cascie |
+| Titan's Resolve | +2 AD per hit (max 25 stacks) |
+| Frozen Heart | +25 armor/MR, slow enemies, grants Mystic |
+
+### Integracja z Simulation
+
+```python
+# Setup
+loader = ConfigLoader("data/")
+sim = Simulation(seed=42, config=config)
+sim.set_config_loader(loader)
+
+# Load traits & items
+sim.set_trait_manager(loader.load_all_traits())
+sim.set_item_manager(loader.load_all_items())
+
+# Equip items
+sim.item_manager.equip_item(unit, "infinity_edge")
+sim.item_manager.equip_item(unit, "bloodthirster")
+
+# Run
+result = sim.run()
+```
+
+### Testy
+
+```bash
+pytest tests/ -v  # 120 tests (100 core + 20 items)
 ```

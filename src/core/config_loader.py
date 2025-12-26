@@ -327,6 +327,51 @@ class ConfigLoader:
         return result
     
     # ─────────────────────────────────────────────────────────────────────────
+    # ITEMS
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    _items: Optional[Dict] = None
+    
+    def _get_all_items_raw(self) -> Dict:
+        """Zwraca wszystkie surowe definicje itemów."""
+        if self._items is None:
+            data = self._load_yaml("items.yaml")
+            self._items = data.get("items", {})
+        return self._items
+    
+    def load_all_items(self) -> Dict:
+        """
+        Wczytuje wszystkie definicje itemów.
+        
+        Returns:
+            Dict[str, Dict]: Mapa item_id -> definicja
+        """
+        return copy.deepcopy(self._get_all_items_raw())
+    
+    def load_item(self, item_id: str) -> Dict:
+        """
+        Wczytuje definicję itema.
+        
+        Args:
+            item_id: ID itema
+            
+        Returns:
+            Dict: Definicja itema
+            
+        Raises:
+            KeyError: Jeśli item nie istnieje
+        """
+        items = self._get_all_items_raw()
+        
+        if item_id not in items:
+            raise KeyError(f"Item '{item_id}' not found in items.yaml")
+        
+        result = copy.deepcopy(items[item_id])
+        result["id"] = item_id
+        
+        return result
+    
+    # ─────────────────────────────────────────────────────────────────────────
     # HELPERY
     # ─────────────────────────────────────────────────────────────────────────
     

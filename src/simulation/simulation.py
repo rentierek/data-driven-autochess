@@ -108,6 +108,7 @@ from ..combat.damage import DamageType, calculate_damage, apply_damage
 from ..events.event_logger import EventLogger, EventType
 from ..abilities import Ability, ProjectileManager, EFFECT_REGISTRY
 from ..traits import TraitManager
+from ..items import ItemManager
 
 
 @dataclass
@@ -195,6 +196,9 @@ class Simulation:
         
         # Trait system
         self.trait_manager: Optional[TraitManager] = None
+        
+        # Item system
+        self.item_manager: Optional[ItemManager] = None
     
     # ─────────────────────────────────────────────────────────────────────────
     # DODAWANIE JEDNOSTEK
@@ -262,6 +266,10 @@ class Simulation:
         if self.trait_manager:
             self.trait_manager.on_battle_start()
         
+        # Activate items at battle start (equip, apply on_equip effects)
+        if self.item_manager:
+            self.item_manager.on_battle_start()
+        
         # Główna pętla
         while not self.is_finished and self.tick < self.config.max_ticks:
             self._run_tick()
@@ -278,6 +286,10 @@ class Simulation:
         # 0. Trait time-based triggers
         if self.trait_manager:
             self.trait_manager.on_tick(self.tick)
+        
+        # 0b. Item interval triggers
+        if self.item_manager:
+            self.item_manager.on_tick(self.tick)
         
         # 1. Update buffs
         self._phase_update_buffs()
@@ -525,6 +537,10 @@ class Simulation:
             # Aplikuj obrażenia
             apply_damage(unit, target, damage_result)
             
+            # Item on_hit effects
+            if self.item_manager:
+                self.item_manager.on_hit(unit, target)
+            
             # Loguj obrażenia
             self.logger.log_damage(
                 self.tick, target.id, unit.id,
@@ -540,6 +556,10 @@ class Simulation:
             if target.is_dead():
                 self.logger.log_death(self.tick, target.id, unit.id)
                 self.grid.remove_unit(target)
+                
+                # Item on_kill effects
+                if self.item_manager:
+                    self.item_manager.on_kill(unit, target)
                 
                 # Clear target
                 unit.clear_target()
@@ -625,6 +645,16 @@ class Simulation:
         self.trait_manager = TraitManager(self)
         self.trait_manager.load_traits(traits_data)
     
+    def set_item_manager(self, items_data: Dict[str, Any]) -> None:
+        """
+        Tworzy i konfiguruje ItemManager.
+        
+        Args:
+            items_data: Słownik z items.yaml (klucz 'items')
+        """
+        self.item_manager = ItemManager(self)
+        self.item_manager.load_items(items_data)
+    
     def _get_unit_ability(self, unit: Unit) -> Optional[Ability]:
         """
         Zwraca Ability dla jednostki.
@@ -673,6 +703,10 @@ class Simulation:
             self.tick, unit.id, ability.id,
             target.id if target else None,
         )
+        
+        # Item on_ability_cast effects (Blue Buff, etc.)
+        if self.item_manager:
+            self.item_manager.on_ability_cast(unit)
         
         # Check if projectile-based
         if ability.projectile:

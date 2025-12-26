@@ -176,6 +176,7 @@ def calculate_damage(
     can_crit: bool = True,
     can_dodge: bool = True,
     is_ability: bool = False,
+    ability_can_crit: bool = False,  # Override for Jeweled Gauntlet
 ) -> DamageResult:
     """
     Oblicza obrażenia od ataku lub umiejętności.
@@ -213,10 +214,15 @@ def calculate_damage(
     reduction = 0.0
     
     # ─────────────────────────────────────────────────────────────────────
-    # CRIT (tylko auto-attacks)
+    # CRIT (auto-attacks LUB ability z ability_crit flag)
     # ─────────────────────────────────────────────────────────────────────
     
-    if can_crit and not is_ability:
+    # Check if ability can crit (Jeweled Gauntlet)
+    effective_can_crit = can_crit and not is_ability
+    if is_ability and (ability_can_crit or attacker.item_stats.has_flag("ability_crit")):
+        effective_can_crit = True
+    
+    if effective_can_crit:
         crit_chance = attacker.stats.get_crit_chance()
         if rng.roll_crit(crit_chance):
             is_crit = True
@@ -261,22 +267,42 @@ def calculate_damage(
     final_damage = max(0.0, final_damage)
     
     # ─────────────────────────────────────────────────────────────────────
+    # CONDITIONAL EFFECTS Z ITEMÓW (Giant Slayer, etc.)
+    # ─────────────────────────────────────────────────────────────────────
+    
+    # Get damage modifiers from equipped items
+    damage_amp = 0.0
+    for item in attacker.equipped_items:
+        for cond_effect in item.conditional_effects:
+            mods = cond_effect.check_and_get_modifier(attacker, defender)
+            if mods:
+                damage_amp += mods.get("damage_amp", 0)
+    
+    if damage_amp > 0:
+        final_damage *= (1 + damage_amp)
+    
+    # ─────────────────────────────────────────────────────────────────────
     # LIFESTEAL / SPELL VAMP
     # ─────────────────────────────────────────────────────────────────────
     
     lifesteal_amount = 0.0
     
+    # Omnivamp (heal z WSZYSTKICH obrażeń - itemy jak Bloodthirster)
+    omnivamp = attacker.stats.get_omnivamp()
+    if omnivamp > 0:
+        lifesteal_amount += final_damage * omnivamp
+    
     if is_ability:
-        # Spell vamp
+        # Spell vamp (dodatkowy heal z ability)
         spell_vamp = attacker.stats.get_spell_vamp()
         if spell_vamp > 0:
-            lifesteal_amount = final_damage * spell_vamp
+            lifesteal_amount += final_damage * spell_vamp
     else:
-        # Lifesteal (fizyczne auto-attacks)
+        # Lifesteal (tylko fizyczne auto-attacks)
         if damage_type == DamageType.PHYSICAL:
             lifesteal = attacker.stats.get_lifesteal()
             if lifesteal > 0:
-                lifesteal_amount = final_damage * lifesteal
+                lifesteal_amount += final_damage * lifesteal
     
     return DamageResult(
         raw_damage=raw_damage,

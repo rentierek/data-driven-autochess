@@ -1,17 +1,19 @@
 # TFT Auto-Battler Simulator
 
-Data-driven symulator walk auto-battler w stylu Teamfight Tactics. Headless engine z pełnym systemem umiejętności, projektili, AoE i debuffów.
+Data-driven symulator walk auto-battler w stylu Teamfight Tactics. Headless engine z pełnym systemem umiejętności, traitów, przedmiotów i projektili.
 
 ## 📊 Statystyki Projektu
 
 | Metryka | Wartość |
 |---------|---------|
-| **Linii kodu Python** | 10,418 |
-| **Linii konfiguracji YAML** | 947 |
-| **Testy** | 88 (100% pass) |
-| **Moduły** | 7 |
+| **Linii kodu Python** | ~12,000 |
+| **Linii konfiguracji YAML** | ~1,200 |
+| **Testy** | 120 (100% pass) |
+| **Moduły** | 9 |
 | **Typy efektów** | 19 |
 | **Archetypy jednostek** | 15 |
+| **Traity** | 11 |
+| **Przedmioty** | 15 |
 
 ## 🎮 Features
 
@@ -31,6 +33,8 @@ Data-driven symulator walk auto-battler w stylu Teamfight Tactics. Headless engi
 | **Events** | ✅ | JSON logging for replay |
 | **Champion Classes** | ✅ | 7 klas z modyfikatorami many |
 | **Targeting** | ✅ | 11 selektorów (nearest, backline, cluster...) |
+| **Traits** | ✅ | Synergy system, unique unit counting, triggers |
+| **Items** | ✅ | Percent stats, ability crit, omnivamp, conditionals |
 
 ### 19 Typów Efektów
 
@@ -41,20 +45,27 @@ Data-driven symulator walk auto-battler w stylu Teamfight Tactics. Headless engi
 | **Support** | `heal`, `shield`, `wound`, `buff`, `mana_grant`, `cleanse` |
 | **Displacement** | `knockback`, `pull`, `dash` |
 
-### 15 Archetypów Jednostek
+### Przedmioty (15)
 
-| Kategoria | Jednostki |
-|-----------|-----------|
-| **Tanks** | Guardian, Warrior |
-| **Melee DPS** | Berserker, Assassin, Duelist |
-| **Ranged DPS** | Archer, Sniper, Gunslinger |
-| **Mages** | Fire Mage, Ice Mage, Necromancer, Battlemage |
-| **Support** | Healer, Shaman, Executioner |
+**Komponenty (wszystkie dają % bonusy):**
+
+- B.F. Sword (+10% AD), Rod (+10% AP), Chain Vest (+20% Armor)
+- Negatron (+20% MR), Giant's Belt (+10% HP), Recurve Bow (+10% AS)
+- Tear (+15 Starting Mana), Sparring Gloves (+10% Crit/Dodge)
+
+**Combined Items:**
+
+- Infinity Edge (+35% AD, ability crit)
+- Rabadon's Deathcap (+50% AP)
+- Giant Slayer (+20% dmg vs >1600 HP)
+- Bloodthirster (+25% omnivamp)
+- Blue Buff (+10 mana po cascie)
+- Frozen Heart (grants Mystic trait)
 
 ## 📁 Struktura Projektu
 
 ```
-data-driven-autochess/
+datadrive-autochess-simulator/
 ├── src/
 │   ├── abilities/          # System umiejętności
 │   │   ├── ability.py      # Ability dataclass + config
@@ -64,7 +75,7 @@ data-driven-autochess/
 │   │   └── aoe.py          # AoE calculations
 │   │
 │   ├── combat/             # System walki
-│   │   └── damage.py       # Damage calculation + mitigation
+│   │   └── damage.py       # Damage calc + omnivamp + ability crit
 │   │
 │   ├── core/               # Fundamenty
 │   │   ├── hex_coord.py    # Axial hex coordinates
@@ -80,12 +91,21 @@ data-driven-autochess/
 │   ├── events/             # Logging
 │   │   └── event_logger.py # JSON event log for replay
 │   │
+│   ├── items/              # System przedmiotów (NEW)
+│   │   ├── item.py         # Item, ItemStats dataclasses
+│   │   ├── item_effect.py  # ItemEffect, ConditionalEffect
+│   │   └── item_manager.py # Equip, triggers, effects
+│   │
 │   ├── simulation/         # Battle engine
 │   │   └── simulation.py   # Main tick loop (30 TPS)
 │   │
+│   ├── traits/             # System traitów (NEW)
+│   │   ├── trait.py        # Trait, TraitThreshold dataclasses
+│   │   └── trait_manager.py # Counting, activation, effects
+│   │
 │   └── units/              # Unit system
 │       ├── unit.py         # Unit dataclass + debuffs
-│       ├── stats.py        # Stats + modifiers
+│       ├── stats.py        # Stats + modifiers + omnivamp
 │       ├── state_machine.py # IDLE/MOVING/ATTACKING/CASTING/STUNNED/DEAD
 │       └── champion_class.py # Mana modifiers per class
 │
@@ -94,108 +114,88 @@ data-driven-autochess/
 │   ├── units.yaml          # 15 unit definitions
 │   ├── abilities.yaml      # Ability definitions
 │   ├── classes.yaml        # Champion class modifiers
-│   └── items.yaml          # Item definitions (placeholder)
-│
-├── tests/
-│   ├── test_abilities.py   # 22 tests
-│   ├── test_damage.py      # 21 tests
-│   ├── test_mana.py        # 27 tests
-│   └── test_targeting.py   # 18 tests
+│   ├── traits.yaml         # 11 trait definitions
+│   └── items.yaml          # 15 item definitions
 │
 ├── docs/
-│   ├── PROJECT_DESIGN.md   # Architecture + roadmap
 │   └── SYSTEMS.md          # Detailed system documentation
 │
+├── tests/                  # 120 tests
+│   ├── test_abilities.py
+│   ├── test_items.py       # 20 tests
+│   ├── test_traits.py      # 12 tests
+│   └── ...
+│
+├── test_8v8_battle.py      # Full integration test
 ├── main.py                 # Entry point
-├── test_8v8_battle.py      # 8v8 battle test
-└── requirements.txt        # Dependencies
+└── requirements.txt
 ```
 
 ## 🚀 Quick Start
 
-### Instalacja
-
 ```bash
-git clone https://github.com/rentierek/data-driven-autochess.git
-cd data-driven-autochess
+# Clone
+git clone <repo>
+cd datadrive-autochess-simulator
+
+# Install
 pip install -r requirements.txt
-```
 
-### Uruchomienie symulacji
-
-```bash
-# Prosta walka
-python main.py
-
-# Z seedem dla determinizmu
-python main.py --seed 12345
-
-# 8v8 battle test
-python test_8v8_battle.py --seed 42
-```
-
-### Uruchomienie testów
-
-```bash
+# Run tests
 pytest tests/ -v
+
+# Run 8v8 battle
+python test_8v8_battle.py --seed 42
+
+# Run main
+python main.py
 ```
 
-## 📖 Jak to działa?
+## 🎯 Przykład użycia
 
-### Pętla Ticka (30 TPS)
+```python
+from src.simulation.simulation import Simulation, SimulationConfig
+from src.core.config_loader import ConfigLoader
 
-```
-1. UPDATE_BUFFS     → Decrement buff durations
-2. CHECK_ABILITIES  → Start casting if mana full
-3. AI_DECISION      → Target selection, state transitions
-4. EXECUTE_ACTIONS  → Move, attack, cast abilities
-5. UPDATE_PROJECTILES → Move projectiles, apply on hit
-6. CHECK_END        → Winner determination
-```
+# Setup
+loader = ConfigLoader("data/")
+sim = Simulation(seed=42)
+sim.set_config_loader(loader)
 
-### Skalowanie Umiejętności
+# Load systems
+sim.set_trait_manager(loader.load_all_traits())
+sim.set_item_manager(loader.load_all_items())
 
-```yaml
-# Star scaling: [1★, 2★, 3★]
-# Stat scaling: final = value × (stat/100)
+# Add units
+unit = sim.add_unit_from_config(
+    loader.load_unit("archer"),
+    team=0,
+    position=HexCoord(0, 0),
+    star_level=2
+)
 
-fireball:
-  cast_time: [20, 18, 15]
-  effects:
-    - type: "damage"
-      damage_type: "magical"
-      value: [200, 350, 600]  # per star
-      scaling: "ap"           # × (AP/100)
-    - type: "burn"
-      value: [20, 35, 60]
-      duration: 90
-```
+# Equip items
+sim.item_manager.equip_item(unit, "infinity_edge")
+sim.item_manager.equip_item(unit, "bloodthirster")
 
-### Przykład Walki
-
-```
-Team 0 (Blue): Guardian, Warrior, Fire Mage, Ice Mage, Archer, Healer, Assassin, Berserker
-Team 1 (Red):  Guardian, Warrior, Fire Mage, Necromancer, Sniper, Healer, Duelist, Battlemage
-
-Result: Team 0 wins in 16.9s
-Stats: 108 ability casts, 209 effects, 14 deaths
+# Run
+result = sim.run()
+print(f"Winner: Team {result['winner_team']}")
 ```
 
-## 🗺️ Roadmap
+## 📈 Następne kroki
 
-| Faza | Status | Opis |
-|------|--------|------|
-| **Faza 1** | ✅ | Core systems (grid, units, combat) |
-| **Faza 2** | ✅ | Ability system + 19 effects |
-| **Faza 3** | ✅ | Simulation integration + 8v8 battle |
-| **Faza 4** | 🔜 | Trait/Synergy system (2/4/6 breakpoints) |
-| **Faza 5** | 📋 | Item system (components + combined) |
-| **Faza 6** | 📋 | Database + ML integration |
+1. **Economy System** - Gold, shop, XP, levels
+2. **Stage/Round System** - PvE, PvP rounds, carousel
+3. **Augments** - Special abilities chosen during game
+4. **UI/Visualization** - Web or PyGame frontend
+5. **AI Player** - Monte Carlo Tree Search / RL
+6. **Replay System** - Playback from JSON logs
 
-## 📝 License
+## 📄 Dokumentacja
 
-MIT License
+Szczegółowa dokumentacja systemów: [docs/SYSTEMS.md](docs/SYSTEMS.md)
 
-## 🤝 Contributing
+## 📃 License
 
-Pull requests welcome! Please run tests before submitting.
+MIT

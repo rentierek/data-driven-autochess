@@ -45,6 +45,10 @@ def run_8v8_battle(seed: int = 12345, verbose: bool = True) -> dict:
     traits_data = loader.load_all_traits()
     sim.set_trait_manager(traits_data)
     
+    # Load items
+    items_data = loader.load_all_items()
+    sim.set_item_manager(items_data)
+    
     # ═══════════════════════════════════════════════════════════════════════════
     # TEAM 0 (BLUE) - Pozycje: dolna część mapy (r=0,1,2)
     # ═══════════════════════════════════════════════════════════════════════════
@@ -95,11 +99,14 @@ def run_8v8_battle(seed: int = 12345, verbose: bool = True) -> dict:
         print("TEAM 0 (BLUE)")
         print("=" * 60)
     
+    team0_spawned = []
     for unit_id, pos, star in team0_units:
         unit_config = loader.load_unit(unit_id)
         unit = sim.add_unit_from_config(unit_config, team=0, position=pos, star_level=star)
-        if unit and verbose:
-            print(f"  {unit.name} ({star}★) @ {pos} - ability: {unit.abilities}")
+        if unit:
+            team0_spawned.append(unit)
+            if verbose:
+                print(f"  {unit.name} ({star}★) @ {pos} - ability: {unit.abilities}")
     
     # Spawn Team 1
     if verbose:
@@ -108,11 +115,57 @@ def run_8v8_battle(seed: int = 12345, verbose: bool = True) -> dict:
         print("TEAM 1 (RED)")
         print("=" * 60)
     
+    team1_spawned = []
     for unit_id, pos, star in team1_units:
         unit_config = loader.load_unit(unit_id)
         unit = sim.add_unit_from_config(unit_config, team=1, position=pos, star_level=star)
-        if unit and verbose:
-            print(f"  {unit.name} ({star}★) @ {pos} - ability: {unit.abilities}")
+        if unit:
+            team1_spawned.append(unit)
+            if verbose:
+                print(f"  {unit.name} ({star}★) @ {pos} - ability: {unit.abilities}")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # EQUIP ITEMS
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    if verbose:
+        print()
+        print("=" * 60)
+        print("ITEMS EQUIPPED")
+        print("=" * 60)
+    
+    # Team 0 items
+    if len(team0_spawned) > 0:  # Guardian - tank items
+        sim.item_manager.equip_item(team0_spawned[0], "warmogs_armor")
+        sim.item_manager.equip_item(team0_spawned[0], "bramble_vest")
+    
+    if len(team0_spawned) > 4:  # Archer - AD carry items
+        sim.item_manager.equip_item(team0_spawned[4], "infinity_edge")
+        sim.item_manager.equip_item(team0_spawned[4], "bloodthirster")
+        sim.item_manager.equip_item(team0_spawned[4], "giant_slayer")
+    
+    if len(team0_spawned) > 2:  # Fire Mage - AP + ability crit
+        sim.item_manager.equip_item(team0_spawned[2], "rabadons_deathcap")
+        sim.item_manager.equip_item(team0_spawned[2], "jeweled_gauntlet")
+    
+    if len(team0_spawned) > 5:  # Healer - blue buff for mana
+        sim.item_manager.equip_item(team0_spawned[5], "blue_buff")
+    
+    # Team 1 items
+    if len(team1_spawned) > 0:  # Guardian - tank
+        sim.item_manager.equip_item(team1_spawned[0], "frozen_heart")
+        sim.item_manager.equip_item(team1_spawned[0], "dragons_claw")
+    
+    if len(team1_spawned) > 4:  # Sniper - AD
+        sim.item_manager.equip_item(team1_spawned[4], "infinity_edge")
+        sim.item_manager.equip_item(team1_spawned[4], "titans_resolve")
+    
+    # Print equipped items
+    if verbose:
+        for unit in team0_spawned + team1_spawned:
+            if unit.equipped_items:
+                items = [i.name for i in unit.equipped_items]
+                print(f"  {unit.name} (T{unit.team}): {items}")
     
     # Run simulation
     if verbose:

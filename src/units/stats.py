@@ -135,6 +135,7 @@ class UnitStats:
     flat_lifesteal: float = field(default=0.0, repr=False)
     flat_spell_vamp: float = field(default=0.0, repr=False)
     flat_mana: float = field(default=0.0, repr=False)
+    flat_omnivamp: float = field(default=0.0, repr=False)  # Heal from ALL damage
     
     # Percent bonuses (mnożniki, np. 0.1 = +10%)
     percent_hp: float = field(default=0.0, repr=False)
@@ -143,6 +144,9 @@ class UnitStats:
     percent_armor: float = field(default=0.0, repr=False)
     percent_magic_resist: float = field(default=0.0, repr=False)
     percent_attack_speed: float = field(default=0.0, repr=False)
+    
+    # Special stats
+    base_omnivamp: float = field(default=0.0, repr=False)  # % heal from all damage
     
     def __post_init__(self):
         """Inicjalizuje HP i mana na wartości startowe."""
@@ -318,6 +322,15 @@ class UnitStats:
     def get_max_mana(self) -> float:
         """Zwraca maksymalną manę."""
         return self.base_max_mana + self.flat_mana
+    
+    def get_omnivamp(self) -> float:
+        """
+        Zwraca omnivamp (heal z wszystkich obrażeń).
+        
+        Ograniczone do [0.0, 1.0].
+        """
+        raw = self.base_omnivamp + self.flat_omnivamp
+        return max(0.0, min(1.0, raw))
     
     # ─────────────────────────────────────────────────────────────────────────
     # MODYFIKACJA STATYSTYK

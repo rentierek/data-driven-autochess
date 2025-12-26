@@ -52,6 +52,9 @@ from .state_machine import UnitState, UnitStateMachine
 
 if TYPE_CHECKING:
     from ..effects.buff import Buff
+    from ..items.item import Item
+
+from ..items.item import ItemStats
 
 
 @dataclass
@@ -102,9 +105,13 @@ class Unit:
     
     # Komponenty
     abilities: List[str] = field(default_factory=list)
-    items: List[str] = field(default_factory=list)
+    items: List[str] = field(default_factory=list)  # Item IDs from config
     traits: List[str] = field(default_factory=list)
     buffs: List["Buff"] = field(default_factory=list, repr=False)
+    
+    # Equipped items (actual Item objects)
+    equipped_items: List["Item"] = field(default_factory=list, repr=False)
+    item_stats: ItemStats = field(default_factory=ItemStats)
     
     # Combat state
     attack_cooldown: float = field(default=0.0, repr=False)

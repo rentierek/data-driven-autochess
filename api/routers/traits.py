@@ -24,12 +24,16 @@ async def get_traits() -> List[Dict[str, Any]]:
     
     result = []
     for trait_id, data in traits_data.items():
+        thresholds_raw = data.get("thresholds", {})
         thresholds = []
-        for thresh in data.get("thresholds", []):
-            thresholds.append({
-                "count": thresh.get("count", 0),
-                "effects": thresh.get("effects", []),
-            })
+        
+        # Thresholds are dict with numeric keys (2, 4, 6)
+        if isinstance(thresholds_raw, dict):
+            for count, thresh_data in sorted(thresholds_raw.items()):
+                thresholds.append({
+                    "count": int(count),
+                    "effects": thresh_data.get("effects", []) if isinstance(thresh_data, dict) else [],
+                })
         
         trait_info = {
             "id": trait_id,

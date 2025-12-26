@@ -95,25 +95,29 @@ async def calculate_synergies(request: SynergyRequest) -> Dict[str, Any]:
             continue
         
         trait_def = traits_data[trait_id]
-        thresholds = trait_def.get("thresholds", [])
+        thresholds_raw = trait_def.get("thresholds", {})
         
-        # Find active threshold
-        active_threshold = None
-        for thresh in sorted(thresholds, key=lambda x: x.get("count", 0), reverse=True):
-            if count >= thresh.get("count", 0):
-                active_threshold = thresh
-                break
+        # Thresholds are dict with numeric keys (2, 4, 6)
+        all_thresholds = []
+        active_threshold_count = None
         
-        # Get all threshold counts for display
-        all_thresholds = [t.get("count", 0) for t in thresholds]
+        if isinstance(thresholds_raw, dict):
+            sorted_thresholds = sorted(thresholds_raw.keys(), key=int)
+            all_thresholds = [int(t) for t in sorted_thresholds]
+            
+            # Find active threshold (highest that count meets)
+            for thresh_count in reversed(sorted_thresholds):
+                if count >= int(thresh_count):
+                    active_threshold_count = int(thresh_count)
+                    break
         
         active_traits.append({
             "id": trait_id,
             "name": trait_def.get("name", trait_id),
             "count": count,
             "thresholds": all_thresholds,
-            "active_threshold": active_threshold.get("count") if active_threshold else None,
-            "is_active": active_threshold is not None,
+            "active_threshold": active_threshold_count,
+            "is_active": active_threshold_count is not None,
         })
     
     # Sort by active first, then by count
@@ -193,8 +197,8 @@ async def run_simulation(request: SimulationRequest) -> Dict[str, Any]:
     # Run simulation
     result = sim.run()
     
-    # Get event log
-    events = sim.logger.get_events()
+    # Get event log - convert GameEvent objects to dicts
+    events = [e.to_dict() for e in sim.logger.events]
     
     return {
         "seed": seed,

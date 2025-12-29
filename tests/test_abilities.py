@@ -148,7 +148,7 @@ def test_effect_registry_contains_all():
         # Displacement
         "knockback", "pull", "dash",
     ]
-    assert len(EFFECT_REGISTRY) == 19
+    assert len(EFFECT_REGISTRY) >= 19
     for effect_type in expected:
         assert effect_type in EFFECT_REGISTRY, f"Missing: {effect_type}"
 

@@ -1,70 +1,451 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# DEFINICJE JEDNOSTEK - 15 ARCHETYPÓW
+# 60 CHAMPIONS - SET 16 UNITS
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# Każda jednostka nadpisuje tylko te statystyki, które różnią się od defaults.
-# Brakujące statystyki są automatycznie uzupełniane z defaults.yaml.
+# Podział: 10 x 1-cost, 12 x 2-cost, 12 x 3-cost, 12 x 4-cost, 14 x 5-cost
+# Archetypy per tier: Tank, AP Caster, AD Caster, Berserker, AS Carry, Support
+#
 # ═══════════════════════════════════════════════════════════════════════════
 
 units:
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # TANKI (Frontline)
+  # 1-COST UNITS (10) - Weak, simple abilities
   # ═══════════════════════════════════════════════════════════════════════════
   
-  # GUARDIAN - tank z tauntiem i shieldem
-  guardian:
-    name: "Guardian"
-    hp: 900
-    attack_damage: 45
-    armor: 60
-    magic_resist: 40
-    attack_range: 1
-    attack_speed: 0.55
-    max_mana: 90
-    start_mana: 30
-    mana_class: "guardian"
-    traits: [tank, knight]
-    ability: "iron_bastion"
-  
-  # WARRIOR - ofensywny tank ze stunem
-  warrior:
-    name: "Warrior"
-    hp: 750
-    attack_damage: 60
-    armor: 45
+  # TANK
+  soldier:
+    name: "Soldier"
+    cost: 1
+    hp: 700
+    attack_damage: 40
+    armor: 40
     magic_resist: 30
     attack_range: 1
-    attack_speed: 0.65
-    max_mana: 100
-    mana_class: "brawler"
-    traits: [knight, human]
-    ability: "shield_bash"
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # DPS MELEE
-  # ═══════════════════════════════════════════════════════════════════════════
+    attack_speed: 0.55
+    max_mana: 80
+    start_mana: 20
+    traits: [guardian, human]
+    ability: "shield_wall"
   
-  # BERSERKER - high damage, low defense, lifesteal
-  berserker:
-    name: "Berserker"
+  # AP CASTER
+  apprentice:
+    name: "Apprentice"
+    cost: 1
+    hp: 500
+    attack_damage: 35
+    ability_power: 15
+    armor: 20
+    magic_resist: 20
+    attack_range: 3
+    attack_speed: 0.65
+    max_mana: 60
+    start_mana: 20
+    traits: [mage, scholar]
+    ability: "arcane_bolt"
+
+  # AD CASTER
+  scout:
+    name: "Scout"
+    cost: 1
+    hp: 500
+    attack_damage: 55
+    armor: 20
+    magic_resist: 15
+    attack_range: 3
+    attack_speed: 0.70
+    max_mana: 70
+    start_mana: 20
+    traits: [ranger, nomad]
+    ability: "quick_shot"
+  
+  # BERSERKER
+  brawler:
+    name: "Brawler"
+    cost: 1
     hp: 600
-    attack_damage: 80
+    attack_damage: 55
     armor: 25
     attack_range: 1
-    attack_speed: 0.85
-    crit_chance: 0.30
-    crit_damage: 1.6
-    lifesteal: 0.20
-    max_mana: 100
-    mana_class: "brawler"
-    traits: [brawler, wild]
-    ability: "reckless_swing"
+    attack_speed: 0.70
+    crit_chance: 0.20
+    lifesteal: 0.10
+    max_mana: 80
+    traits: [fighter, wild]
+    ability: "reckless_strike"
+
+  # AS CARRY
+  recruit:
+    name: "Recruit"
+    cost: 1
+    hp: 550
+    attack_damage: 45
+    armor: 20
+    attack_range: 1
+    attack_speed: 0.80
+    max_mana: 70
+    traits: [duelist, human]
+    ability: "flurry"
+
+  # SUPPORT
+  acolyte:
+    name: "Acolyte"
+    cost: 1
+    hp: 550
+    attack_damage: 30
+    ability_power: 10
+    armor: 25
+    magic_resist: 25
+    attack_range: 2
+    attack_speed: 0.60
+    max_mana: 60
+    start_mana: 20
+    traits: [cleric, divine]
+    ability: "minor_heal"
+
+  # MIXED
+  nomad:
+    name: "Nomad"
+    cost: 1
+    hp: 550
+    attack_damage: 50
+    armor: 30
+    magic_resist: 20
+    attack_range: 1
+    attack_speed: 0.65
+    dodge_chance: 0.10
+    max_mana: 80
+    traits: [nomad, wild]
+    ability: "sand_strike"
+
+  rogue:
+    name: "Rogue"
+    cost: 1
+    hp: 500
+    attack_damage: 55
+    armor: 15
+    attack_range: 1
+    attack_speed: 0.75
+    crit_chance: 0.25
+    crit_damage: 1.5
+    max_mana: 80
+    start_mana: 20
+    traits: [assassin, criminal]
+    ability: "backstab"
+
+  herbalist:
+    name: "Herbalist"
+    cost: 1
+    hp: 500
+    attack_damage: 30
+    ability_power: 10
+    armor: 20
+    magic_resist: 30
+    attack_range: 3
+    attack_speed: 0.60
+    max_mana: 50
+    start_mana: 15
+    traits: [druid, nature]
+    ability: "healing_herbs"
+
+  mercenary:
+    name: "Mercenary"
+    cost: 1
+    hp: 600
+    attack_damage: 50
+    armor: 30
+    magic_resist: 20
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 80
+    traits: [fighter, criminal]
+    ability: "heavy_swing"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 2-COST UNITS (12) - Basic abilities
+  # ═══════════════════════════════════════════════════════════════════════════
   
-  # ASSASSIN - burst damage, targets backline
+  # TANK
+  knight:
+    name: "Knight"
+    cost: 2
+    hp: 850
+    attack_damage: 50
+    armor: 55
+    magic_resist: 35
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 80
+    start_mana: 25
+    traits: [guardian, knight]
+    ability: "shield_bash"
+
+  sentinel:
+    name: "Sentinel"
+    cost: 2
+    hp: 900
+    attack_damage: 45
+    armor: 50
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.50
+    max_mana: 90
+    start_mana: 30
+    traits: [guardian, divine]
+    ability: "iron_bastion"
+
+  # AP CASTER
+  pyromancer:
+    name: "Pyromancer"
+    cost: 2
+    hp: 550
+    attack_damage: 35
+    ability_power: 25
+    armor: 20
+    magic_resist: 25
+    attack_range: 3
+    attack_speed: 0.65
+    max_mana: 70
+    start_mana: 20
+    traits: [mage, inferno]
+    ability: "fireball"
+
+  cryomancer:
+    name: "Cryomancer"
+    cost: 2
+    hp: 550
+    attack_damage: 35
+    ability_power: 25
+    armor: 20
+    magic_resist: 30
+    attack_range: 3
+    attack_speed: 0.65
+    max_mana: 70
+    start_mana: 20
+    traits: [mage, frost]
+    ability: "ice_shard"
+
+  # AD CASTER
+  archer:
+    name: "Archer"
+    cost: 2
+    hp: 550
+    attack_damage: 65
+    armor: 20
+    magic_resist: 15
+    attack_range: 4
+    attack_speed: 0.70
+    crit_chance: 0.25
+    max_mana: 70
+    start_mana: 20
+    traits: [ranger, hunter]
+    ability: "piercing_arrow"
+
+  gunner:
+    name: "Gunner"
+    cost: 2
+    hp: 500
+    attack_damage: 60
+    armor: 15
+    magic_resist: 15
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 80
+    start_mana: 20
+    traits: [gunslinger, tech]
+    ability: "rapid_fire"
+
+  # BERSERKER
+  berserker:
+    name: "Berserker"
+    cost: 2
+    hp: 650
+    attack_damage: 70
+    armor: 25
+    attack_range: 1
+    attack_speed: 0.80
+    crit_chance: 0.25
+    crit_damage: 1.55
+    lifesteal: 0.15
+    max_mana: 90
+    traits: [fighter, wild]
+    ability: "blood_rage"
+
+  # AS CARRY
+  duelist:
+    name: "Duelist"
+    cost: 2
+    hp: 600
+    attack_damage: 55
+    armor: 30
+    attack_range: 1
+    attack_speed: 0.85
+    dodge_chance: 0.15
+    max_mana: 70
+    traits: [duelist, noble]
+    ability: "riposte"
+
+  blademaster:
+    name: "Blademaster"
+    cost: 2
+    hp: 600
+    attack_damage: 60
+    armor: 25
+    attack_range: 1
+    attack_speed: 0.90
+    crit_chance: 0.20
+    max_mana: 80
+    traits: [duelist, samurai]
+    ability: "twin_slash"
+
+  # SUPPORT
+  cleric:
+    name: "Cleric"
+    cost: 2
+    hp: 600
+    attack_damage: 35
+    ability_power: 20
+    armor: 30
+    magic_resist: 35
+    attack_range: 2
+    attack_speed: 0.55
+    max_mana: 60
+    start_mana: 20
+    traits: [cleric, divine]
+    ability: "healing_light"
+
+  shaman:
+    name: "Shaman"
+    cost: 2
+    hp: 600
+    attack_damage: 40
+    ability_power: 20
+    armor: 25
+    magic_resist: 35
+    attack_range: 2
+    attack_speed: 0.60
+    max_mana: 70
+    start_mana: 20
+    traits: [shaman, nature]
+    ability: "spirit_link"
+
+  # MIXED
+  shadow:
+    name: "Shadow"
+    cost: 2
+    hp: 550
+    attack_damage: 60
+    armor: 20
+    attack_range: 1
+    attack_speed: 0.80
+    crit_chance: 0.30
+    dodge_chance: 0.20
+    max_mana: 70
+    start_mana: 25
+    traits: [assassin, shadow]
+    ability: "phantom_strike"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 3-COST UNITS (12) - Good abilities
+  # ═══════════════════════════════════════════════════════════════════════════
+  
+  # TANK
+  warden:
+    name: "Warden"
+    cost: 3
+    hp: 1000
+    attack_damage: 55
+    armor: 65
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 80
+    start_mana: 30
+    traits: [guardian, warden]
+    ability: "fortify"
+
+  paladin:
+    name: "Paladin"
+    cost: 3
+    hp: 950
+    attack_damage: 60
+    armor: 55
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.60
+    max_mana: 90
+    start_mana: 30
+    traits: [knight, divine]
+    ability: "divine_shield"
+
+  # AP CASTER
+  elementalist:
+    name: "Elementalist"
+    cost: 3
+    hp: 600
+    attack_damage: 40
+    ability_power: 40
+    armor: 25
+    magic_resist: 35
+    attack_range: 3
+    attack_speed: 0.65
+    max_mana: 80
+    start_mana: 25
+    traits: [mage, elemental]
+    ability: "elemental_burst"
+
+  warlock:
+    name: "Warlock"
+    cost: 3
+    hp: 650
+    attack_damage: 45
+    ability_power: 40
+    armor: 25
+    magic_resist: 40
+    attack_range: 3
+    attack_speed: 0.65
+    max_mana: 70
+    start_mana: 25
+    traits: [mage, demon]
+    ability: "dark_orb"
+
+  # AD CASTER
+  sniper:
+    name: "Sniper"
+    cost: 3
+    hp: 550
+    attack_damage: 80
+    armor: 20
+    magic_resist: 15
+    attack_range: 5
+    attack_speed: 0.65
+    crit_chance: 0.30
+    crit_damage: 1.7
+    max_mana: 80
+    start_mana: 25
+    traits: [ranger, hunter]
+    ability: "headshot"
+
+  # BERSERKER
+  gladiator:
+    name: "Gladiator"
+    cost: 3
+    hp: 750
+    attack_damage: 75
+    armor: 35
+    attack_range: 1
+    attack_speed: 0.75
+    crit_chance: 0.25
+    lifesteal: 0.20
+    max_mana: 80
+    start_mana: 20
+    traits: [fighter, gladiator]
+    ability: "devastating_blow"
+
   assassin:
     name: "Assassin"
-    hp: 500
+    cost: 3
+    hp: 600
     attack_damage: 85
     armor: 20
     attack_range: 1
@@ -72,189 +453,511 @@ units:
     crit_chance: 0.45
     crit_damage: 1.80
     dodge_chance: 0.20
-    max_mana: 100
-    start_mana: 20
-    mana_class: "assassin"
-    traits: [assassin, demon]
-    ability: "backstab"
-  
-  # DUELIST - sustained damage with slow
-  duelist:
-    name: "Duelist"
-    hp: 550
-    attack_damage: 70
-    armor: 30
-    attack_range: 1
-    attack_speed: 0.80
-    crit_chance: 0.30
-    dodge_chance: 0.15
-    max_mana: 80
-    mana_class: "brawler"
-    traits: [duelist, noble]
-    ability: "frost_bolt"
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # RANGED DPS
-  # ═══════════════════════════════════════════════════════════════════════════
-  
-  # ARCHER - high crit, AoE volley
-  archer:
-    name: "Archer"
-    hp: 450
-    attack_damage: 75
-    armor: 15
-    attack_range: 4
-    attack_speed: 0.85
-    crit_chance: 0.35
-    crit_damage: 1.60
-    max_mana: 100
-    mana_class: "marksman"
-    traits: [ranger, elf]
-    ability: "volley"
-  
-  # SNIPER - single target burst
-  sniper:
-    name: "Sniper"
-    hp: 400
-    attack_damage: 90
-    armor: 10
-    attack_range: 5
-    attack_speed: 0.70
-    crit_chance: 0.40
-    crit_damage: 1.80
-    max_mana: 100
-    mana_class: "marksman"
-    traits: [ranger, machine]
-    ability: "coup_de_grace"
-  
-  # GUNSLINGER - fast attacks, armor shred
-  gunslinger:
-    name: "Gunslinger"
-    hp: 480
-    attack_damage: 65
-    armor: 18
-    attack_range: 3
-    attack_speed: 1.00
-    crit_chance: 0.25
-    max_mana: 80
-    mana_class: "marksman"
-    traits: [gunslinger, pirate]
-    ability: "armor_break"
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # MAGES (AP Casters)
-  # ═══════════════════════════════════════════════════════════════════════════
-  
-  # FIRE_MAGE - burst + burn DoT
-  fire_mage:
-    name: "Fire Mage"
-    hp: 400
-    attack_damage: 35
-    ability_power: 100
-    armor: 15
-    magic_resist: 30
-    attack_range: 3
-    attack_speed: 0.55
-    max_mana: 80
-    start_mana: 20
-    mana_class: "sorcerer"
-    traits: [sorcerer, elemental]
-    ability: "fireball"
-  
-  # ICE_MAGE - damage + slow
-  ice_mage:
-    name: "Ice Mage"
-    hp: 420
-    attack_damage: 30
-    ability_power: 90
-    armor: 18
-    magic_resist: 35
-    attack_range: 3
-    attack_speed: 0.50
-    max_mana: 60
-    start_mana: 15
-    mana_class: "sorcerer"
-    traits: [sorcerer, glacial]
-    ability: "frost_bolt"
-  
-  # NECROMANCER - damage + MR shred
-  necromancer:
-    name: "Necromancer"
-    hp: 380
-    attack_damage: 25
-    ability_power: 110
-    armor: 12
-    magic_resist: 40
-    attack_range: 4
-    attack_speed: 0.50
-    max_mana: 70
-    start_mana: 25
-    mana_class: "sorcerer"
-    traits: [sorcerer, shadow]
-    ability: "mana_burn"
-  
-  # BATTLEMAGE - hybrid melee mage
-  battlemage:
-    name: "Battlemage"
-    hp: 550
-    attack_damage: 55
-    ability_power: 70
-    armor: 35
-    magic_resist: 35
-    attack_range: 1
-    attack_speed: 0.70
-    max_mana: 80
-    mana_class: "brawler"
-    traits: [sorcerer, knight]
-    ability: "frost_bolt"
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # SUPPORT
-  # ═══════════════════════════════════════════════════════════════════════════
-  
-  # HEALER - heal + shield
-  healer:
-    name: "Healer"
-    hp: 550
-    attack_damage: 35
-    ability_power: 85
-    armor: 25
-    magic_resist: 40
-    attack_range: 3
-    attack_speed: 0.55
     max_mana: 70
     start_mana: 30
-    spell_vamp: 0.20
-    mana_class: "support"
-    traits: [mystic, light]
-    ability: "heal_wave"
-  
-  # SHAMAN - DoT + wound
-  shaman:
-    name: "Shaman"
-    hp: 500
+    traits: [assassin, ninja]
+    ability: "shadow_step"
+
+  # AS CARRY
+  bladedancer:
+    name: "Bladedancer"
+    cost: 3
+    hp: 650
+    attack_damage: 65
+    armor: 30
+    attack_range: 1
+    attack_speed: 0.95
+    dodge_chance: 0.20
+    max_mana: 80
+    traits: [duelist, dancer]
+    ability: "blade_dance"
+
+  # SUPPORT
+  priest:
+    name: "Priest"
+    cost: 3
+    hp: 700
     attack_damage: 40
-    ability_power: 75
-    armor: 22
-    magic_resist: 35
+    ability_power: 35
+    armor: 30
+    magic_resist: 45
+    attack_range: 2
+    attack_speed: 0.55
+    max_mana: 70
+    start_mana: 25
+    traits: [cleric, divine]
+    ability: "mass_heal"
+
+  bard:
+    name: "Bard"
+    cost: 3
+    hp: 650
+    attack_damage: 45
+    ability_power: 30
+    armor: 25
+    magic_resist: 40
     attack_range: 3
     attack_speed: 0.60
     max_mana: 60
     start_mana: 20
-    mana_class: "support"
-    traits: [mystic, wild]
-    ability: "poison_sting"
+    traits: [bard, mystic]
+    ability: "battle_hymn"
+
+  monk:
+    name: "Monk"
+    cost: 3
+    hp: 700
+    attack_damage: 65
+    armor: 35
+    magic_resist: 35
+    attack_range: 1
+    attack_speed: 0.85
+    dodge_chance: 0.25
+    max_mana: 70
+    start_mana: 20
+    traits: [fighter, mystic]
+    ability: "ki_strike"
+
+  summoner:
+    name: "Summoner"
+    cost: 3
+    hp: 600
+    attack_damage: 40
+    ability_power: 35
+    armor: 25
+    magic_resist: 35
+    attack_range: 3
+    attack_speed: 0.60
+    max_mana: 80
+    start_mana: 30
+    traits: [summoner, mage]
+    ability: "summon_elemental"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 4-COST UNITS (12) - Strong abilities
+  # ═══════════════════════════════════════════════════════════════════════════
   
-  # EXECUTIONER - execute low HP targets
-  executioner:
-    name: "Executioner"
-    hp: 520
+  # TANK
+  general:
+    name: "General"
+    cost: 4
+    hp: 1100
+    attack_damage: 65
+    armor: 70
+    magic_resist: 55
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 90
+    start_mana: 35
+    traits: [guardian, commander]
+    ability: "rally_cry"
+
+  colossus:
+    name: "Colossus"
+    cost: 4
+    hp: 1300
+    attack_damage: 70
+    armor: 75
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.45
+    max_mana: 100
+    start_mana: 40
+    traits: [guardian, titan]
+    ability: "titan_slam"
+
+  # AP CASTER
+  archmage:
+    name: "Archmage"
+    cost: 4
+    hp: 650
+    attack_damage: 45
+    ability_power: 60
+    armor: 25
+    magic_resist: 50
+    attack_range: 3
+    attack_speed: 0.65
+    max_mana: 80
+    start_mana: 30
+    traits: [mage, arcane]
+    ability: "arcane_storm"
+
+  sorcerer:
+    name: "Sorcerer"
+    cost: 4
+    hp: 650
+    attack_damage: 45
+    ability_power: 55
+    armor: 25
+    magic_resist: 45
+    attack_range: 4
+    attack_speed: 0.65
+    max_mana: 70
+    start_mana: 25
+    traits: [mage, void]
+    ability: "void_ray"
+
+  # AD CASTER
+  marksman:
+    name: "Marksman"
+    cost: 4
+    hp: 600
+    attack_damage: 90
+    armor: 25
+    magic_resist: 20
+    attack_range: 5
+    attack_speed: 0.75
+    crit_chance: 0.35
+    crit_damage: 1.75
+    max_mana: 80
+    start_mana: 25
+    traits: [ranger, gunslinger]
+    ability: "bullet_rain"
+
+  # BERSERKER
+  champion:
+    name: "Champion"
+    cost: 4
+    hp: 900
+    attack_damage: 85
+    armor: 40
+    attack_range: 1
+    attack_speed: 0.80
+    crit_chance: 0.30
+    lifesteal: 0.20
+    max_mana: 80
+    start_mana: 25
+    traits: [fighter, champion]
+    ability: "champion_strike"
+
+  nightblade:
+    name: "Nightblade"
+    cost: 4
+    hp: 700
+    attack_damage: 95
+    armor: 25
+    attack_range: 1
+    attack_speed: 0.90
+    crit_chance: 0.50
+    crit_damage: 1.90
+    dodge_chance: 0.25
+    max_mana: 70
+    start_mana: 30
+    traits: [assassin, shadow]
+    ability: "death_mark"
+
+  # AS CARRY
+  swordmaster:
+    name: "Swordmaster"
+    cost: 4
+    hp: 750
     attack_damage: 75
-    armor: 28
+    armor: 35
+    attack_range: 1
+    attack_speed: 1.00
+    crit_chance: 0.30
+    dodge_chance: 0.20
+    max_mana: 80
+    traits: [duelist, samurai]
+    ability: "sword_fury"
+
+  # SUPPORT
+  high_priest:
+    name: "High Priest"
+    cost: 4
+    hp: 800
+    attack_damage: 45
+    ability_power: 50
+    armor: 35
+    magic_resist: 55
+    attack_range: 3
+    attack_speed: 0.55
+    max_mana: 80
+    start_mana: 30
+    traits: [cleric, divine]
+    ability: "divine_intervention"
+
+  enchanter:
+    name: "Enchanter"
+    cost: 4
+    hp: 700
+    attack_damage: 40
+    ability_power: 45
+    armor: 30
+    magic_resist: 50
+    attack_range: 3
+    attack_speed: 0.60
+    max_mana: 70
+    start_mana: 25
+    traits: [enchanter, mystic]
+    ability: "mass_enchant"
+
+  # SPECIAL
+  lich:
+    name: "Lich"
+    cost: 4
+    hp: 750
+    attack_damage: 50
+    ability_power: 55
+    armor: 30
+    magic_resist: 50
+    attack_range: 3
+    attack_speed: 0.60
+    max_mana: 80
+    start_mana: 30
+    traits: [mage, undead]
+    ability: "death_coil"
+
+  dragon_knight:
+    name: "Dragon Knight"
+    cost: 4
+    hp: 950
+    attack_damage: 80
+    ability_power: 30
+    armor: 50
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.70
+    max_mana: 90
+    start_mana: 30
+    traits: [knight, dragon]
+    ability: "dragon_breath"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 5-COST UNITS (14) - Legendary, game-changing abilities
+  # ═══════════════════════════════════════════════════════════════════════════
+  
+  # TANK
+  titan:
+    name: "Titan"
+    cost: 5
+    hp: 1500
+    attack_damage: 80
+    armor: 85
+    magic_resist: 65
+    attack_range: 1
+    attack_speed: 0.50
+    max_mana: 100
+    start_mana: 40
+    traits: [guardian, titan]
+    ability: "earth_shatter"
+
+  juggernaut:
+    name: "Juggernaut"
+    cost: 5
+    hp: 1400
+    attack_damage: 85
+    armor: 80
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 90
+    start_mana: 35
+    traits: [guardian, colossus]
+    ability: "unstoppable_force"
+
+  # AP CASTER
+  celestial:
+    name: "Celestial"
+    cost: 5
+    hp: 750
+    attack_damage: 50
+    ability_power: 80
+    armor: 30
+    magic_resist: 60
+    attack_range: 4
+    attack_speed: 0.65
+    max_mana: 90
+    start_mana: 35
+    traits: [mage, celestial]
+    ability: "starfall"
+
+  void_entity:
+    name: "Void Entity"
+    cost: 5
+    hp: 800
+    attack_damage: 55
+    ability_power: 75
+    armor: 35
+    magic_resist: 55
+    attack_range: 4
+    attack_speed: 0.65
+    max_mana: 80
+    start_mana: 30
+    traits: [mage, void]
+    ability: "void_rift"
+
+  archon:
+    name: "Archon"
+    cost: 5
+    hp: 700
+    attack_damage: 45
+    ability_power: 85
+    armor: 30
+    magic_resist: 65
+    attack_range: 4
+    attack_speed: 0.60
+    max_mana: 100
+    start_mana: 40
+    traits: [mage, arcane]
+    ability: "arcane_annihilation"
+
+  # AD CASTER
+  dragon_lord:
+    name: "Dragon Lord"
+    cost: 5
+    hp: 1000
+    attack_damage: 100
+    ability_power: 40
+    armor: 55
+    magic_resist: 55
+    attack_range: 2
+    attack_speed: 0.65
+    max_mana: 80
+    start_mana: 30
+    traits: [dragon, lord]
+    ability: "dragon_fury"
+
+  # BERSERKER
+  demon_king:
+    name: "Demon King"
+    cost: 5
+    hp: 1100
+    attack_damage: 100
+    armor: 50
+    attack_range: 1
+    attack_speed: 0.85
+    crit_chance: 0.35
+    crit_damage: 1.85
+    lifesteal: 0.25
+    max_mana: 70
+    start_mana: 30
+    traits: [demon, king]
+    ability: "infernal_rampage"
+
+  berserker_lord:
+    name: "Berserker Lord"
+    cost: 5
+    hp: 1000
+    attack_damage: 95
+    armor: 45
+    attack_range: 1
+    attack_speed: 0.90
+    crit_chance: 0.40
+    lifesteal: 0.30
+    max_mana: 80
+    start_mana: 25
+    traits: [fighter, wild]
+    ability: "blood_storm"
+
+  # AS CARRY
+  avatar:
+    name: "Avatar"
+    cost: 5
+    hp: 900
+    attack_damage: 85
+    ability_power: 40
+    armor: 45
+    magic_resist: 45
+    attack_range: 2
+    attack_speed: 1.05
+    crit_chance: 0.30
+    dodge_chance: 0.25
+    max_mana: 80
+    start_mana: 30
+    traits: [elemental, avatar]
+    ability: "avatar_assault"
+
+  storm_lord:
+    name: "Storm Lord"
+    cost: 5
+    hp: 850
+    attack_damage: 90
+    armor: 40
+    magic_resist: 50
+    attack_range: 3
+    attack_speed: 1.00
+    max_mana: 70
+    start_mana: 25
+    traits: [elemental, storm]
+    ability: "lightning_storm"
+
+  # SUPPORT
+  divine_oracle:
+    name: "Divine Oracle"
+    cost: 5
+    hp: 900
+    attack_damage: 50
+    ability_power: 70
+    armor: 40
+    magic_resist: 65
+    attack_range: 3
+    attack_speed: 0.55
+    max_mana: 90
+    start_mana: 40
+    traits: [divine, oracle]
+    ability: "divine_protection"
+
+  soul_weaver:
+    name: "Soul Weaver"
+    cost: 5
+    hp: 850
+    attack_damage: 55
+    ability_power: 60
+    armor: 35
+    magic_resist: 60
+    attack_range: 3
+    attack_speed: 0.60
+    max_mana: 80
+    start_mana: 35
+    traits: [mystic, spirit]
+    ability: "soul_harvest"
+
+  # SPECIAL
+  phoenix:
+    name: "Phoenix"
+    cost: 5
+    hp: 800
+    attack_damage: 70
+    ability_power: 50
+    armor: 40
+    magic_resist: 50
+    attack_range: 2
+    attack_speed: 0.75
+    max_mana: 80
+    start_mana: 30
+    traits: [mythic, inferno]
+    ability: "rebirth"
+
+  death_knight:
+    name: "Death Knight"
+    cost: 5
+    hp: 1050
+    attack_damage: 95
+    armor: 60
+    magic_resist: 50
     attack_range: 1
     attack_speed: 0.75
-    crit_chance: 0.30
-    max_mana: 100
-    mana_class: "executioner"
-    traits: [assassin, imperial]
-    ability: "coup_de_grace"
+    lifesteal: 0.20
+    max_mana: 80
+    start_mana: 30
+    traits: [undead, knight]
+    ability: "soul_reaper"
+
+  # TRANSCENDENT - Laser Mode
+  transcendent:
+    name: "Transcendent"
+    cost: 5
+    hp: 750
+    attack_damage: 90
+    ability_power: 50
+    armor: 35
+    magic_resist: 45
+    attack_range: 4
+    attack_speed: 0.85
+    crit_chance: 0.25
+    crit_damage: 1.6
+    max_mana: 50
+    start_mana: 0
+    traits: [tech, ascended]
+    ability: "transcendent_state"

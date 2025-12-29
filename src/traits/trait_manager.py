@@ -109,26 +109,16 @@ def apply_damage_amp(units: List["Unit"], effect: TraitEffect) -> int:
     """
     Zwiększa zadawane obrażenia procentowo.
     
-    Note: Wymaga obsługi w damage.py przez buff system.
-    Na razie dodajemy jako buff.
+    Dodaje do base_damage_amp w stats.
     """
     value = effect.value  # np. 0.15 = 15% więcej dmg
-    duration = effect.params.get("duration", 999)
     count = 0
     
     for unit in units:
         if not unit.is_alive():
             continue
-        # Dodaj jako buff damage_amp
-        from ..effects.buff import Buff
-        buff = Buff(
-            id=f"trait_damage_amp_{id(effect)}",
-            stat="damage_amp",
-            value=value,
-            remaining_ticks=duration,
-            source="trait",
-        )
-        unit.add_buff(buff)
+        # Use base_damage_amp stat directly
+        unit.stats.base_damage_amp += value
         count += 1
     
     return count
@@ -137,21 +127,41 @@ def apply_damage_amp(units: List["Unit"], effect: TraitEffect) -> int:
 def apply_damage_reduction(units: List["Unit"], effect: TraitEffect) -> int:
     """Redukuje otrzymywane obrażenia procentowo."""
     value = effect.value
-    duration = effect.params.get("duration", 999)
     count = 0
     
     for unit in units:
         if not unit.is_alive():
             continue
-        from ..effects.buff import Buff
-        buff = Buff(
-            id=f"trait_damage_reduction_{id(effect)}",
-            stat="damage_reduction",
-            value=value,
-            remaining_ticks=duration,
-            source="trait",
-        )
-        unit.add_buff(buff)
+        # Use base_durability stat directly
+        unit.stats.base_durability += value
+        count += 1
+    
+    return count
+
+
+def apply_heal(units: List["Unit"], effect: TraitEffect) -> int:
+    """Leczy jednostki."""
+    value = effect.value
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        unit.stats.heal(value)
+        count += 1
+    
+    return count
+
+
+def apply_mana(units: List["Unit"], effect: TraitEffect) -> int:
+    """Dodaje manę jednostkom."""
+    value = effect.value
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        unit.stats.add_mana(value)
         count += 1
     
     return count
@@ -163,6 +173,8 @@ TRAIT_EFFECT_APPLICATORS = {
     "shield": apply_shield,
     "damage_amp": apply_damage_amp,
     "damage_reduction": apply_damage_reduction,
+    "heal": apply_heal,
+    "mana": apply_mana,
 }
 
 

@@ -540,6 +540,10 @@ class Simulation:
             # Item on_hit effects
             if self.item_manager:
                 self.item_manager.on_hit(unit, target)
+                
+                # Item on_crit effects (Striker's Flail)
+                if damage_result.is_crit:
+                    self.item_manager.on_crit(unit, target)
             
             # Loguj obrażenia
             self.logger.log_damage(

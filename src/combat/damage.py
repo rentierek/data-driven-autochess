@@ -270,16 +270,30 @@ def calculate_damage(
     # CONDITIONAL EFFECTS Z ITEMÓW (Giant Slayer, etc.)
     # ─────────────────────────────────────────────────────────────────────
     
-    # Get damage modifiers from equipped items
-    damage_amp = 0.0
+    # Get damage modifiers from equipped items (conditional)
+    conditional_damage_amp = 0.0
     for item in attacker.equipped_items:
         for cond_effect in item.conditional_effects:
             mods = cond_effect.check_and_get_modifier(attacker, defender)
             if mods:
-                damage_amp += mods.get("damage_amp", 0)
+                conditional_damage_amp += mods.get("damage_amp", 0)
     
-    if damage_amp > 0:
-        final_damage *= (1 + damage_amp)
+    # ─────────────────────────────────────────────────────────────────────
+    # DAMAGE AMP & DURABILITY (Set 16)
+    # ─────────────────────────────────────────────────────────────────────
+    
+    # Get flat damage amp from attacker stats (Deathblade, Rabadon's, etc.)
+    total_damage_amp = conditional_damage_amp + attacker.stats.get_damage_amp()
+    
+    # Get durability from defender stats (Steadfast Heart, Spirit Visage, etc.)
+    durability = defender.stats.get_durability()
+    
+    # Apply damage amp and durability
+    # Formula: final = mitigated * (1 + damage_amp) * (1 - durability)
+    if total_damage_amp > 0:
+        final_damage *= (1 + total_damage_amp)
+    if durability > 0:
+        final_damage *= (1 - durability)
     
     # ─────────────────────────────────────────────────────────────────────
     # LIFESTEAL / SPELL VAMP

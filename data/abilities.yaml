@@ -1,70 +1,182 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# DEFINICJE UMIEJĘTNOŚCI
+# 60 ABILITIES - SET 16
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# NOWY FORMAT:
-#   value: [100, 200, 400]  - wartości per star (1★, 2★, 3★)
-#   scaling: "ap"           - skalowanie z statystyki
-#   
-# WZÓR: final = value[star] × (caster_stat / 100)
+# TYPY EFEKTÓW (27):
+#   damage, dot, burn, execute, sunder, shred, splash_damage, ricochet,
+#   multi_hit, percent_hp_damage, dash_through, stun, slow, chill, silence,
+#   disarm, heal, shield, shield_self, wound, buff, buff_team, mana_grant,
+#   cleanse, knockback, pull, dash
 #
-# TYPY EFEKTÓW:
-#   damage, heal, shield, stun, burn, wound, dot,
-#   slow, sunder, shred, execute, buff, mana_grant
+# WZÓR: final = value[star] × (caster_stat / 100)
 # ═══════════════════════════════════════════════════════════════════════════
 
 abilities:
 
-  # ─────────────────────────────────────────────────────────────────────────
-  # SHIELD BASH (Warrior)
-  # Uderza cel i ogłusza
-  # ─────────────────────────────────────────────────────────────────────────
-  shield_bash:
-    name: "Shield Bash"
-    mana_cost: 100
-    cast_time: [15, 12, 10]
-    target_type: "current_target"
-    delivery: "instant"
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 1-COST ABILITIES (Simple effects)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  shield_wall:
+    name: "Shield Wall"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "self"
     effects:
-      - type: "damage"
-        damage_type: "physical"
-        value: [150, 275, 450]    # 1★, 2★, 3★
-        scaling: "ad"              # × AD%
-      - type: "stun"
-        duration: [30, 45, 60]     # 1s, 1.5s, 2s
-  
-  # ─────────────────────────────────────────────────────────────────────────
-  # VOLLEY (Archer)
-  # Strzela w wielu wrogów
-  # ─────────────────────────────────────────────────────────────────────────
-  volley:
-    name: "Volley"
-    mana_cost: 100
-    cast_time: 10
-    target_type: "nearest"
-    delivery: "projectile"
+      - type: "shield_self"
+        value: [150, 250, 400]
+        duration: 120
+        scaling: "armor"
+
+  arcane_bolt:
+    name: "Arcane Bolt"
+    mana_cost: 60
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
     projectile:
       speed: 4
       homing: true
-    aoe:
-      type: "circle"
-      radius: [1, 2, 2]
+    effects:
+      - type: "damage"
+        damage_type: "magical"
+        value: [100, 180, 320]
+        scaling: "ap"
+
+  quick_shot:
+    name: "Quick Shot"
+    mana_cost: 70
+    cast_time: [8, 7, 6]
+    target_type: "current_target"
     effects:
       - type: "damage"
         damage_type: "physical"
-        value: [80, 140, 250]
+        value: [120, 200, 350]
         scaling: "ad"
-  
-  # ─────────────────────────────────────────────────────────────────────────
-  # FIREBALL (Mage)
-  # Duże obrażenia magiczne + burn
-  # ─────────────────────────────────────────────────────────────────────────
+
+  reckless_strike:
+    name: "Reckless Strike"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [150, 260, 450]
+        scaling: "ad"
+      - type: "heal"
+        value: [50, 90, 150]
+        target: "self"
+
+  flurry:
+    name: "Flurry"
+    mana_cost: 70
+    cast_time: [6, 5, 4]
+    target_type: "current_target"
+    effects:
+      - type: "multi_hit"
+        value: [40, 70, 120]
+        hits: [3, 3, 4]
+        damage_type: "physical"
+        scaling: "ad"
+
+  minor_heal:
+    name: "Minor Heal"
+    mana_cost: 60
+    cast_time: [10, 8, 6]
+    target_type: "lowest_hp_ally"
+    effects:
+      - type: "heal"
+        value: [100, 180, 300]
+        scaling: "ap"
+
+  sand_strike:
+    name: "Sand Strike"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [100, 175, 300]
+        scaling: "ad"
+      - type: "chill"
+        value: 0.15
+        duration: 60
+
+  backstab:
+    name: "Backstab"
+    mana_cost: 80
+    cast_time: [5, 4, 3]
+    target_type: "lowest_hp_percent"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [180, 320, 550]
+        scaling: "ad"
+      - type: "wound"
+        value: 40
+        duration: 120
+
+  healing_herbs:
+    name: "Healing Herbs"
+    mana_cost: 50
+    cast_time: [8, 7, 6]
+    target_type: "lowest_hp_ally"
+    effects:
+      - type: "heal"
+        value: [80, 140, 240]
+        scaling: "ap"
+
+  heavy_swing:
+    name: "Heavy Swing"
+    mana_cost: 80
+    cast_time: [10, 9, 8]
+    target_type: "current_target"
+    effects:
+      - type: "splash_damage"
+        value: [120, 200, 350]
+        splash_percent: 0.4
+        damage_type: "physical"
+        scaling: "ad"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 2-COST ABILITIES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  shield_bash:
+    name: "Shield Bash"
+    mana_cost: 80
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [150, 275, 450]
+        scaling: "ad"
+      - type: "stun"
+        duration: [30, 40, 50]
+
+  iron_bastion:
+    name: "Iron Bastion"
+    mana_cost: 90
+    cast_time: [8, 7, 6]
+    target_type: "self"
+    effects:
+      - type: "shield_self"
+        value: [200, 350, 600]
+        duration: 120
+        scaling: "armor"
+      - type: "buff"
+        stat: "armor"
+        value: [20, 35, 50]
+        duration: 120
+        target: "self"
+
   fireball:
     name: "Fireball"
-    mana_cost: 80
-    cast_time: [20, 18, 15]
+    mana_cost: 70
+    cast_time: [15, 12, 10]
     target_type: "current_target"
-    delivery: "projectile"
     projectile:
       speed: 3
       homing: true
@@ -74,186 +186,798 @@ abilities:
         value: [200, 350, 600]
         scaling: "ap"
       - type: "burn"
-        value: [20, 35, 60]        # true damage per second
-        duration: 90                # 3 sekundy
-  
-  # ─────────────────────────────────────────────────────────────────────────
-  # BACKSTAB (Assassin)
-  # Duże obrażenia + wound (grievous wounds)
-  # ─────────────────────────────────────────────────────────────────────────
-  backstab:
-    name: "Backstab"
-    mana_cost: 100
-    cast_time: [5, 4, 3]
-    target_type: "lowest_hp_percent"
-    delivery: "instant"
-    effects:
-      - type: "damage"
-        damage_type: "physical"
-        value: [250, 450, 800]
-        scaling: "ad"
-      - type: "wound"
-        value: [40, 50, 60]        # % redukcji leczenia
-        duration: 150               # 5 sekund
-  
-  # ─────────────────────────────────────────────────────────────────────────
-  # HEAL WAVE (Healer)
-  # Leczy sojuszników + daje shield
-  # ─────────────────────────────────────────────────────────────────────────
-  heal_wave:
-    name: "Heal Wave"
-    mana_cost: 70
-    cast_time: 15
-    target_type: "lowest_hp_ally"
-    delivery: "instant"
-    effects:
-      - type: "heal"
-        value: [150, 250, 400]
-        scaling: "ap"
-        target: "target"
-      - type: "shield"
-        value: [100, 175, 300]
+        value: [20, 35, 60]
         duration: 90
-        scaling: "ap"
-        target: "target"
-  
-  # ─────────────────────────────────────────────────────────────────────────
-  # RECKLESS SWING (Bruiser)
-  # Zadaje obrażenia i leczy siebie
-  # ─────────────────────────────────────────────────────────────────────────
-  reckless_swing:
-    name: "Reckless Swing"
-    mana_cost: 100
-    cast_time: 12
-    target_type: "current_target"
-    delivery: "instant"
-    effects:
-      - type: "damage"
-        damage_type: "physical"
-        value: [180, 320, 550]
-        scaling: "ad"
-      - type: "heal"
-        value: [100, 180, 300]
-        scaling: "missing_hp"      # % brakującego HP
-        target: "self"
 
-  # ─────────────────────────────────────────────────────────────────────────
-  # ARMOR BREAK (Tank)
-  # Redukuje Armor celu
-  # ─────────────────────────────────────────────────────────────────────────
-  armor_break:
-    name: "Armor Break"
-    mana_cost: 80
-    cast_time: 10
+  ice_shard:
+    name: "Ice Shard"
+    mana_cost: 70
+    cast_time: [12, 10, 8]
     target_type: "current_target"
-    delivery: "instant"
-    effects:
-      - type: "damage"
-        damage_type: "physical"
-        value: [100, 175, 300]
-        scaling: "ad"
-      - type: "sunder"
-        value: [20, 35, 50]        # redukcja armor
-        duration: 120               # 4 sekundy
-
-  # ─────────────────────────────────────────────────────────────────────────
-  # FROST BOLT (Mage)
-  # Damage + slow
-  # ─────────────────────────────────────────────────────────────────────────
-  frost_bolt:
-    name: "Frost Bolt"
-    mana_cost: 60
-    cast_time: 12
-    target_type: "current_target"
-    delivery: "projectile"
     projectile:
       speed: 4
       homing: true
     effects:
       - type: "damage"
         damage_type: "magical"
-        value: [120, 200, 350]
+        value: [160, 280, 480]
         scaling: "ap"
-      - type: "slow"
-        value: [30, 40, 50]        # % slow AS
-        duration: [60, 90, 120]    # 2s, 3s, 4s
+      - type: "chill"
+        value: [0.20, 0.25, 0.30]
+        duration: 90
 
-  # ─────────────────────────────────────────────────────────────────────────
-  # EXECUTE (Executioner)
-  # Zabija poniżej progu HP
-  # ─────────────────────────────────────────────────────────────────────────
-  coup_de_grace:
-    name: "Coup de Grace"
-    mana_cost: 100
-    cast_time: 8
-    target_type: "lowest_hp_percent"
-    delivery: "instant"
+  piercing_arrow:
+    name: "Piercing Arrow"
+    mana_cost: 70
+    cast_time: [10, 8, 6]
+    target_type: "farthest"
     effects:
-      - type: "damage"
+      - type: "ricochet"
+        value: [300, 500, 850]
         damage_type: "physical"
-        value: [150, 275, 450]
+        max_bounces: 2
         scaling: "ad"
-      - type: "execute"
-        threshold: [15, 20, 30]    # zabij poniżej X% HP
 
-  # ─────────────────────────────────────────────────────────────────────────
-  # IRON BASTION (Guardian)
-  # Shield dla siebie skalowany z Armor
-  # ─────────────────────────────────────────────────────────────────────────
-  iron_bastion:
-    name: "Iron Bastion"
-    mana_cost: 90
-    cast_time: 8
-    target_type: "self"
-    delivery: "instant"
+  rapid_fire:
+    name: "Rapid Fire"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "current_target"
     effects:
-      - type: "shield"
-        value: [200, 350, 600]
-        duration: 150              # 5 sekund
-        scaling: "armor"
+      - type: "multi_hit"
+        value: [50, 85, 145]
+        hits: [4, 4, 5]
+        damage_type: "physical"
+        scaling: "ad"
+
+  blood_rage:
+    name: "Blood Rage"
+    mana_cost: 90
+    cast_time: [8, 7, 6]
+    target_type: "self"
+    effects:
+      - type: "buff"
+        stat: "attack_speed"
+        value: [0.40, 0.55, 0.75]
+        duration: 150
         target: "self"
       - type: "buff"
-        stat: "armor"
-        value: [20, 35, 50]
+        stat: "lifesteal"
+        value: [0.15, 0.20, 0.30]
         duration: 150
         target: "self"
 
-  # ─────────────────────────────────────────────────────────────────────────
-  # POISON STING (Assassin)
-  # DoT magiczny
-  # ─────────────────────────────────────────────────────────────────────────
-  poison_sting:
-    name: "Poison Sting"
-    mana_cost: 60
-    cast_time: 5
-    target_type: "current_target"
-    delivery: "instant"
-    effects:
-      - type: "damage"
-        damage_type: "magical"
-        value: [50, 90, 150]
-        scaling: "ap"
-      - type: "dot"
-        damage_type: "magical"
-        value: [30, 50, 90]        # damage per tick
-        duration: 120               # 4 sekundy
-        interval: 30                # co sekundę
-        scaling: "ap"
-
-  # ─────────────────────────────────────────────────────────────────────────
-  # MANA BURN (Sorcerer)
-  # Damage + shred MR
-  # ─────────────────────────────────────────────────────────────────────────
-  mana_burn:
-    name: "Mana Burn"
+  riposte:
+    name: "Riposte"
     mana_cost: 70
-    cast_time: 15
-    target_type: "highest_stat"
+    cast_time: [6, 5, 4]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [130, 230, 400]
+        scaling: "ad"
+      - type: "buff"
+        stat: "dodge_chance"
+        value: [0.30, 0.40, 0.50]
+        duration: 90
+        target: "self"
+
+  twin_slash:
+    name: "Twin Slash"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "current_target"
+    effects:
+      - type: "multi_hit"
+        value: [80, 140, 240]
+        hits: 2
+        damage_type: "physical"
+        scaling: "ad"
+
+  healing_light:
+    name: "Healing Light"
+    mana_cost: 60
+    cast_time: [10, 8, 6]
+    target_type: "lowest_hp_ally"
+    effects:
+      - type: "heal"
+        value: [150, 260, 440]
+        scaling: "ap"
+      - type: "shield"
+        value: [80, 140, 240]
+        duration: 90
+
+  spirit_link:
+    name: "Spirit Link"
+    mana_cost: 70
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: "buff_team"
+        stat: "attack_speed"
+        value: [0.15, 0.20, 0.30]
+        duration: 120
+        is_percent: true
+
+  phantom_strike:
+    name: "Phantom Strike"
+    mana_cost: 70
+    cast_time: [5, 4, 3]
+    target_type: "lowest_hp_percent"
+    effects:
+      - type: "dash_through"
+        value: [60, 100, 170]
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "damage"
+        damage_type: "physical"
+        value: [140, 240, 420]
+        scaling: "ad"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 3-COST ABILITIES (Strong effects)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  fortify:
+    name: "Fortify"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "self"
+    effects:
+      - type: "shield_self"
+        value: [300, 500, 850]
+        duration: 150
+        scaling: "armor"
+      - type: "buff"
+        stat: "armor"
+        value: [30, 50, 80]
+        duration: 150
+        target: "self"
+      - type: "buff"
+        stat: "magic_resist"
+        value: [20, 35, 55]
+        duration: 150
+        target: "self"
+
+  divine_shield:
+    name: "Divine Shield"
+    mana_cost: 90
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: "shield_self"
+        value: [350, 580, 980]
+        duration: 120
+        scaling: "ap"
+      - type: "heal"
+        value: [100, 175, 300]
+        target: "self"
+
+  elemental_burst:
+    name: "Elemental Burst"
+    mana_cost: 80
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
+    aoe:
+      type: "circle"
+      radius: 2
+    effects:
+      - type: "splash_damage"
+        value: [220, 380, 650]
+        splash_percent: 0.5
+        damage_type: "magical"
+        scaling: "ap"
+      - type: "sunder"
+        value: 20
+        duration: 120
+      - type: "shred"
+        value: 20
+        duration: 120
+
+  dark_orb:
+    name: "Dark Orb"
+    mana_cost: 70
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
     effects:
       - type: "damage"
         damage_type: "magical"
-        value: [180, 300, 500]
+        value: [250, 430, 740]
         scaling: "ap"
       - type: "shred"
-        value: [20, 30, 40]        # redukcja MR
+        value: [25, 35, 45]
         duration: 120
+
+  headshot:
+    name: "Headshot"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "farthest"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [400, 700, 1200]
+        scaling: "ad"
+      - type: "execute"
+        threshold: [15, 20, 25]
+
+  devastating_blow:
+    name: "Devastating Blow"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [280, 480, 820]
+        scaling: "ad"
+      - type: "sunder"
+        value: [30, 40, 50]
+        duration: 120
+
+  shadow_step:
+    name: "Shadow Step"
+    mana_cost: 70
+    cast_time: [4, 3, 2]
+    target_type: "lowest_hp_percent"
+    effects:
+      - type: "dash_through"
+        value: [80, 140, 240]
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "damage"
+        damage_type: "physical"
+        value: [220, 380, 650]
+        scaling: "ad"
+      - type: "silence"
+        duration: [30, 45, 60]
+
+  blade_dance:
+    name: "Blade Dance"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    effects:
+      - type: "multi_hit"
+        value: [70, 120, 200]
+        hits: [4, 5, 6]
+        damage_type: "physical"
+        scaling: "ad"
+
+  mass_heal:
+    name: "Mass Heal"
+    mana_cost: 70
+    cast_time: [12, 10, 8]
+    target_type: "self"
+    aoe:
+      type: "circle"
+      radius: 3
+    effects:
+      - type: "heal"
+        value: [180, 310, 530]
+        scaling: "ap"
+        target: "all_allies"
+
+  battle_hymn:
+    name: "Battle Hymn"
+    mana_cost: 60
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: "buff_team"
+        stat: "attack_damage"
+        value: [0.20, 0.30, 0.45]
+        duration: 150
+        is_percent: true
+      - type: "buff_team"
+        stat: "attack_speed"
+        value: [0.15, 0.22, 0.35]
+        duration: 150
+        is_percent: true
+
+  ki_strike:
+    name: "Ki Strike"
+    mana_cost: 70
+    cast_time: [6, 5, 4]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [200, 350, 600]
+        scaling: "ad"
+      - type: "stun"
+        duration: [30, 40, 50]
+
+  summon_elemental:
+    name: "Summon Elemental"
+    mana_cost: 80
+    cast_time: [15, 12, 10]
+    target_type: "farthest"
+    effects:
+      - type: "damage"
+        damage_type: "magical"
+        value: [150, 260, 450]
+        scaling: "ap"
+      - type: "chill"
+        value: [0.20, 0.25, 0.35]
+        duration: 90
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 4-COST ABILITIES (Powerful effects)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  rally_cry:
+    name: "Rally Cry"
+    mana_cost: 90
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: "buff_team"
+        stat: "attack_damage"
+        value: [0.25, 0.35, 0.50]
+        duration: 150
+        is_percent: true
+      - type: "shield_self"
+        value: [300, 500, 850]
+        duration: 120
+
+  titan_slam:
+    name: "Titan Slam"
+    mana_cost: 100
+    cast_time: [15, 12, 10]
+    target_type: "current_target"
+    aoe:
+      type: "circle"
+      radius: 2
+    effects:
+      - type: "splash_damage"
+        value: [300, 500, 850]
+        splash_percent: 0.6
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "stun"
+        duration: [40, 55, 70]
+      - type: "chill"
+        value: 0.30
+        duration: 90
+
+  arcane_storm:
+    name: "Arcane Storm"
+    mana_cost: 80
+    cast_time: [12, 10, 8]
+    target_type: "farthest"
+    aoe:
+      type: "circle"
+      radius: 2
+    effects:
+      - type: "splash_damage"
+        value: [350, 580, 980]
+        splash_percent: 0.7
+        damage_type: "magical"
+        scaling: "ap"
+
+  void_ray:
+    name: "Void Ray"
+    mana_cost: 70
+    cast_time: [10, 8, 6]
+    target_type: "farthest"
+    effects:
+      - type: "ricochet"
+        value: [450, 750, 1280]
+        damage_type: "magical"
+        max_bounces: 3
+        scaling: "ap"
+      - type: "shred"
+        value: [30, 40, 50]
+        duration: 150
+
+  bullet_rain:
+    name: "Bullet Rain"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "current_target"
+    effects:
+      - type: "multi_hit"
+        value: [100, 170, 290]
+        hits: [5, 6, 7]
+        damage_type: "physical"
+        scaling: "ad"
+
+  champion_strike:
+    name: "Champion Strike"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [380, 650, 1100]
+        scaling: "ad"
+      - type: "heal"
+        value: [150, 260, 440]
+        target: "self"
+
+  death_mark:
+    name: "Death Mark"
+    mana_cost: 70
+    cast_time: [4, 3, 2]
+    target_type: "lowest_hp_percent"
+    effects:
+      - type: "dash_through"
+        value: [100, 170, 290]
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "damage"
+        damage_type: "physical"
+        value: [320, 550, 940]
+        scaling: "ad"
+      - type: "execute"
+        threshold: [20, 25, 30]
+
+  sword_fury:
+    name: "Sword Fury"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    effects:
+      - type: "multi_hit"
+        value: [90, 155, 265]
+        hits: [5, 6, 8]
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "buff"
+        stat: "attack_speed"
+        value: [0.50, 0.70, 1.00]
+        duration: 150
+        target: "self"
+
+  divine_intervention:
+    name: "Divine Intervention"
+    mana_cost: 80
+    cast_time: [12, 10, 8]
+    target_type: "lowest_hp_ally"
+    effects:
+      - type: "heal"
+        value: [350, 580, 980]
+        scaling: "ap"
+      - type: "shield"
+        value: [200, 350, 600]
+        duration: 120
+      - type: "cleanse"
+        target: "target"
+
+  mass_enchant:
+    name: "Mass Enchant"
+    mana_cost: 70
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: "buff_team"
+        stat: "ability_power"
+        value: [25, 40, 65]
+        duration: 150
+        is_percent: false
+      - type: "buff_team"
+        stat: "attack_speed"
+        value: [0.20, 0.30, 0.45]
+        duration: 150
+        is_percent: true
+
+  death_coil:
+    name: "Death Coil"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "magical"
+        value: [300, 520, 880]
+        scaling: "ap"
+      - type: "heal"
+        value: [150, 260, 440]
+        target: "self"
+
+  dragon_breath:
+    name: "Dragon Breath"
+    mana_cost: 90
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
+    aoe:
+      type: "cone"
+      radius: 3
+      angle: 60
+    effects:
+      - type: "splash_damage"
+        value: [280, 480, 820]
+        splash_percent: 0.8
+        damage_type: "magical"
+        scaling: "ap"
+      - type: "burn"
+        value: [40, 70, 120]
+        duration: 120
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 5-COST ABILITIES (Legendary, game-changing)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  earth_shatter:
+    name: "Earth Shatter"
+    mana_cost: 100
+    cast_time: [15, 12, 10]
+    target_type: "current_target"
+    aoe:
+      type: "circle"
+      radius: 3
+    effects:
+      - type: "splash_damage"
+        value: [400, 680, 1150]
+        splash_percent: 0.7
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "stun"
+        duration: [50, 70, 90]
+      - type: "sunder"
+        value: [40, 55, 70]
+        duration: 180
+
+  unstoppable_force:
+    name: "Unstoppable Force"
+    mana_cost: 90
+    cast_time: [10, 8, 6]
+    target_type: "farthest"
+    effects:
+      - type: "dash_through"
+        value: [200, 340, 580]
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "damage"
+        damage_type: "physical"
+        value: [350, 600, 1020]
+        scaling: "ad"
+      - type: "stun"
+        duration: [60, 80, 100]
+
+  starfall:
+    name: "Starfall"
+    mana_cost: 90
+    cast_time: [15, 12, 10]
+    target_type: "farthest"
+    aoe:
+      type: "circle"
+      radius: 4
+    effects:
+      - type: "splash_damage"
+        value: [450, 770, 1300]
+        splash_percent: 0.8
+        damage_type: "magical"
+        scaling: "ap"
+      - type: "shred"
+        value: [40, 55, 70]
+        duration: 180
+
+  void_rift:
+    name: "Void Rift"
+    mana_cost: 80
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
+    aoe:
+      type: "circle"
+      radius: 2
+    effects:
+      - type: "percent_hp_damage"
+        value: [0.12, 0.18, 0.25]
+        damage_type: "magical"
+        is_current: false
+      - type: "silence"
+        duration: [45, 60, 90]
+      - type: "shred"
+        value: [35, 50, 65]
+        duration: 150
+
+  arcane_annihilation:
+    name: "Arcane Annihilation"
+    mana_cost: 100
+    cast_time: [18, 15, 12]
+    target_type: "highest_stat"
+    aoe:
+      type: "circle"
+      radius: 3
+    effects:
+      - type: "splash_damage"
+        value: [500, 850, 1450]
+        splash_percent: 0.6
+        damage_type: "magical"
+        scaling: "ap"
+
+  dragon_fury:
+    name: "Dragon Fury"
+    mana_cost: 80
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
+    aoe:
+      type: "cone"
+      radius: 4
+      angle: 90
+    effects:
+      - type: "splash_damage"
+        value: [380, 650, 1100]
+        splash_percent: 0.7
+        damage_type: "magical"
+        scaling: "ap"
+      - type: "burn"
+        value: [60, 100, 170]
+        duration: 120
+
+  infernal_rampage:
+    name: "Infernal Rampage"
+    mana_cost: 70
+    cast_time: [6, 5, 4]
+    target_type: "current_target"
+    effects:
+      - type: "damage"
+        damage_type: "physical"
+        value: [400, 680, 1150]
+        scaling: "ad"
+      - type: "buff"
+        stat: "attack_speed"
+        value: [0.60, 0.80, 1.20]
+        duration: 180
+        target: "self"
+      - type: "buff"
+        stat: "lifesteal"
+        value: [0.25, 0.35, 0.50]
+        duration: 180
+        target: "self"
+
+  blood_storm:
+    name: "Blood Storm"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "current_target"
+    aoe:
+      type: "circle"
+      radius: 2
+    effects:
+      - type: "splash_damage"
+        value: [350, 600, 1020]
+        splash_percent: 0.5
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "heal"
+        value: [200, 340, 580]
+        target: "self"
+
+  avatar_assault:
+    name: "Avatar Assault"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    effects:
+      - type: "multi_hit"
+        value: [120, 200, 340]
+        hits: [6, 7, 9]
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "buff"
+        stat: "attack_speed"
+        value: [0.75, 1.00, 1.50]
+        duration: 120
+        target: "self"
+
+  lightning_storm:
+    name: "Lightning Storm"
+    mana_cost: 70
+    cast_time: [10, 8, 6]
+    target_type: "farthest"
+    effects:
+      - type: "ricochet"
+        value: [550, 940, 1600]
+        damage_type: "magical"
+        max_bounces: 5
+        scaling: "ad"
+      - type: "chill"
+        value: [0.30, 0.40, 0.50]
+        duration: 120
+
+  divine_protection:
+    name: "Divine Protection"
+    mana_cost: 90
+    cast_time: [12, 10, 8]
+    target_type: "self"
+    effects:
+      - type: "heal"
+        value: [300, 510, 870]
+        scaling: "ap"
+        target: "all_allies"
+      - type: "shield"
+        value: [200, 340, 580]
+        duration: 150
+        target: "all_allies"
+
+  soul_harvest:
+    name: "Soul Harvest"
+    mana_cost: 80
+    cast_time: [12, 10, 8]
+    target_type: "current_target"
+    aoe:
+      type: "circle"
+      radius: 3
+    effects:
+      - type: "percent_hp_damage"
+        value: [0.10, 0.15, 0.22]
+        damage_type: "magical"
+        is_current: false
+      - type: "heal"
+        value: [150, 260, 440]
+        target: "self"
+
+  rebirth:
+    name: "Rebirth"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    aoe:
+      type: "circle"
+      radius: 2
+    effects:
+      - type: "splash_damage"
+        value: [300, 510, 870]
+        splash_percent: 0.6
+        damage_type: "magical"
+        scaling: "ap"
+      - type: "burn"
+        value: [50, 85, 145]
+        duration: 150
+
+  soul_reaper:
+    name: "Soul Reaper"
+    mana_cost: 80
+    cast_time: [8, 7, 6]
+    target_type: "lowest_hp_percent"
+    effects:
+      - type: "dash_through"
+        value: [150, 260, 440]
+        damage_type: "physical"
+        scaling: "ad"
+      - type: "damage"
+        damage_type: "physical"
+        value: [380, 650, 1100]
+        scaling: "ad"
+      - type: "execute"
+        threshold: [25, 30, 40]
+      - type: "heal"
+        value: [200, 340, 580]
+        target: "self"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # TRANSCENDENT STATE - Laser Mode Transform
+  # ═══════════════════════════════════════════════════════════════════════════
+  
+  transcendent_state:
+    name: "Transcendent State"
+    mana_cost: 50
+    cast_time: [3, 3, 2]
+    target_type: "self"
+    effects:
+      # Transform for 4 seconds - gain massive AS and infinite range
+      - type: "buff"
+        stat: "attack_speed"
+        value: [0.75, 0.75, 3.00]
+        duration: 120  # 4 seconds
+        scaling: "ap"
+        target: "self"
+      - type: "buff"
+        stat: "attack_range"
+        value: 10  # Infinite range
+        duration: 120
+        target: "self"
+      # Note: Laser line damage with falloff implemented via multi_hit
+      # Each "hit" represents laser piercing through enemies
+      - type: "multi_hit"
+        value: [85, 130, 450]
+        hits: 4  # Hits up to 4 enemies in line
+        damage_type: "physical"
+        scaling: "ad"
+        # Damage falloff: 70/70/30% reduction per enemy passed
+        # Crit bonus: 33% true damage on crits

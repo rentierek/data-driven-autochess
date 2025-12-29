@@ -40,10 +40,13 @@ class TriggerType(Enum):
     ON_HIT = auto()            # Przy każdym podstawowym ataku
     ON_ABILITY_CAST = auto()   # Gdy caster castuje ability
     ON_TAKE_DAMAGE = auto()    # Gdy unit otrzymuje obrażenia
-    ON_KILL = auto()           # Po zabiciu wroga
+    ON_KILL = auto()           # Po zabiciu wroga (ostatni hit)
+    ON_TAKEDOWN = auto()       # Po udziale w zabójstwie (assist - zadałeś damage)
     ON_INTERVAL = auto()       # Co X ticków
     ON_FIRST_CAST = auto()     # Pierwszy cast ability
     ON_DEATH = auto()          # Gdy unit ginie
+    ON_CRIT = auto()           # Gdy atak trafia krytycznie (Striker's Flail)
+    ON_DAMAGE_DEALT = auto()   # Po zadaniu obrażeń (Hextech Gunblade)
     
     @classmethod
     def from_string(cls, s: str) -> "TriggerType":
@@ -54,9 +57,12 @@ class TriggerType(Enum):
             "on_ability_cast": cls.ON_ABILITY_CAST,
             "on_take_damage": cls.ON_TAKE_DAMAGE,
             "on_kill": cls.ON_KILL,
+            "on_takedown": cls.ON_TAKEDOWN,
             "on_interval": cls.ON_INTERVAL,
             "on_first_cast": cls.ON_FIRST_CAST,
             "on_death": cls.ON_DEATH,
+            "on_crit": cls.ON_CRIT,
+            "on_damage_dealt": cls.ON_DAMAGE_DEALT,
         }
         return mapping.get(s.lower(), cls.ON_EQUIP)
 
@@ -184,6 +190,10 @@ STAT_MAPPING = {
     "mana": "mana",
     "start_mana": "start_mana",
     "mana_per_second": "mana_per_second",
+    # Set 16 additions
+    "durability": "durability",
+    "damage_amp": "damage_amp",
+    "max_mana_reduction": "max_mana_reduction",
 }
 
 
@@ -222,6 +232,12 @@ class ItemStats:
     # Stacking stats (for Titan's Resolve etc.)
     _stacking_stats: Dict[str, float] = field(default_factory=dict)
     _stacking_limits: Dict[str, float] = field(default_factory=dict)
+    
+    # Stack groups - wspólne liczniki dla różnych efektów (np. Titan's on_hit + on_take_damage)
+    # Key: group_name, Value: current_count
+    _stack_groups: Dict[str, int] = field(default_factory=dict)
+    # Key: group_name, Value: max_stacks
+    _stack_group_limits: Dict[str, int] = field(default_factory=dict)
     
     def add_item(self, item: Item) -> None:
         """
@@ -323,6 +339,39 @@ class ItemStats:
         normalized = STAT_MAPPING.get(stat, stat)
         return self._stacking_stats.get(normalized, 0)
     
+    def add_stack_group(self, group: str, max_stacks: int) -> bool:
+        """
+        Dodaje stack do wspólnej grupy (np. Titan's Resolve on_hit + on_take_damage).
+        
+        Args:
+            group: Nazwa grupy stacków
+            max_stacks: Limit stacków
+            
+        Returns:
+            True jeśli dodano (nie osiągnięto limitu)
+        """
+        if group not in self._stack_group_limits:
+            self._stack_group_limits[group] = max_stacks
+        
+        current = self._stack_groups.get(group, 0)
+        limit = self._stack_group_limits[group]
+        
+        if current >= limit:
+            return False
+        
+        self._stack_groups[group] = current + 1
+        return True
+    
+    def get_stack_group_count(self, group: str) -> int:
+        """Zwraca aktualną liczbę stacków w grupie."""
+        return self._stack_groups.get(group, 0)
+    
+    def is_stack_group_full(self, group: str) -> bool:
+        """Sprawdza czy grupa stacków jest pełna."""
+        current = self._stack_groups.get(group, 0)
+        limit = self._stack_group_limits.get(group, 0)
+        return current >= limit and limit > 0
+    
     def reset(self) -> None:
         """Resetuje wszystkie bonusy (nowa walka)."""
         self._flat_bonuses.clear()
@@ -332,3 +381,6 @@ class ItemStats:
         self._granted_traits.clear()
         self._stacking_stats.clear()
         self._stacking_limits.clear()
+        self._stack_groups.clear()
+        self._stack_group_limits.clear()
+

@@ -113,9 +113,20 @@ def apply_stacking_stat(
         if not unit.is_alive():
             continue
         
-        # Use the item_stats stacking system
-        if unit.item_stats.add_stacking_stat(stat, value, max_stacks * value):
-            count += 1
+        # Check if using stack_group (shared limits across triggers)
+        stack_group = effect.params.get("stack_group")
+        
+        if stack_group:
+            # Use shared stack group
+            max_stacks = effect.params.get("max_stacks", 25)
+            if unit.item_stats.add_stack_group(stack_group, max_stacks):
+                # Stack was added, now apply the stat bonus
+                unit.item_stats.add_stacking_stat(stat, value, max_stacks * value)
+                count += 1
+        else:
+            # Use the regular item_stats stacking system
+            if unit.item_stats.add_stacking_stat(stat, value, max_stacks * value):
+                count += 1
     
     return count
 
@@ -233,6 +244,160 @@ def apply_damage(
     return count
 
 
+def apply_sunder(
+    owner: "Unit",
+    targets: List["Unit"],
+    effect: ItemEffect,
+    simulation: "Simulation",
+) -> int:
+    """Nakłada Sunder (% redukcja armora) na cele."""
+    value = effect.value  # 0.30 = 30% sunder
+    duration = effect.params.get("duration", 90)  # 3s default
+    count = 0
+    
+    for unit in targets:
+        if not unit.is_alive():
+            continue
+        unit.add_armor_reduction(value, duration, is_percent=True)
+        count += 1
+    
+    return count
+
+
+def apply_shred(
+    owner: "Unit",
+    targets: List["Unit"],
+    effect: ItemEffect,
+    simulation: "Simulation",
+) -> int:
+    """Nakłada Shred (% redukcja MR) na cele."""
+    value = effect.value  # 0.30 = 30% shred
+    duration = effect.params.get("duration", 150)  # 5s default
+    count = 0
+    
+    for unit in targets:
+        if not unit.is_alive():
+            continue
+        unit.add_mr_reduction(value, duration, is_percent=True)
+        count += 1
+    
+    return count
+
+
+def apply_burn(
+    owner: "Unit",
+    targets: List["Unit"],
+    effect: ItemEffect,
+    simulation: "Simulation",
+) -> int:
+    """Nakłada Burn (% max HP true damage per second)."""
+    value = effect.value  # 0.01 = 1% max HP per second
+    duration = effect.params.get("duration", 60)  # 2s default
+    count = 0
+    
+    for unit in targets:
+        if not unit.is_alive():
+            continue
+        # Burn jest obliczany jako % max HP celu
+        dps = unit.stats.get_max_hp() * value
+        unit.add_burn(dps, duration, owner.id)
+        count += 1
+    
+    return count
+
+
+def apply_wound(
+    owner: "Unit",
+    targets: List["Unit"],
+    effect: ItemEffect,
+    simulation: "Simulation",
+) -> int:
+    """Nakłada Wound (redukcja leczenia)."""
+    value = effect.value  # 33 = 33% redukcji
+    duration = effect.params.get("duration", 60)  # 2s default
+    count = 0
+    
+    for unit in targets:
+        if not unit.is_alive():
+            continue
+        unit.add_wound(value, duration)
+        count += 1
+    
+    return count
+
+
+def apply_percent_max_hp_heal(
+    owner: "Unit",
+    targets: List["Unit"],
+    effect: ItemEffect,
+    simulation: "Simulation",
+) -> int:
+    """Leczy % max HP (Dragon's Claw, Warmog's)."""
+    value = effect.value  # 0.025 = 2.5% max HP
+    count = 0
+    
+    for unit in targets:
+        if not unit.is_alive():
+            continue
+        heal_amount = unit.stats.get_max_hp() * value
+        unit.stats.heal(heal_amount)
+        count += 1
+    
+    return count
+
+
+def apply_percent_missing_hp_heal(
+    owner: "Unit",
+    targets: List["Unit"],
+    effect: ItemEffect,
+    simulation: "Simulation",
+) -> int:
+    """Leczy % brakującego HP (Spirit Visage)."""
+    value = effect.value  # 0.025 = 2.5% missing HP
+    count = 0
+    
+    for unit in targets:
+        if not unit.is_alive():
+            continue
+        missing_hp = unit.stats.get_max_hp() - unit.stats.current_hp
+        heal_amount = missing_hp * value
+        unit.stats.heal(heal_amount)
+        count += 1
+    
+    return count
+
+
+def apply_heal_lowest_ally(
+    owner: "Unit",
+    targets: List["Unit"],  # ignored - finds lowest HP ally
+    effect: ItemEffect,
+    simulation: "Simulation",
+) -> int:
+    """
+    Leczy sojusznika z najmniejszym HP za % zadanych obrażeń (Hextech Gunblade).
+    
+    Parametry effect:
+        value: % obrażeń jako heal (0.15 = 15%)
+        damage_dealt: Obrażenia zadane (przekazywane przez trigger)
+    """
+    heal_percent = effect.value  # 0.15 = 15%
+    damage_dealt = effect.params.get("damage_dealt", 0)
+    
+    if damage_dealt <= 0:
+        return 0
+    
+    # Find lowest HP ally
+    allies = [u for u in simulation.units if u.is_ally(owner) and u.is_alive()]
+    if not allies:
+        return 0
+    
+    lowest_ally = min(allies, key=lambda u: u.stats.current_hp)
+    
+    heal_amount = damage_dealt * heal_percent
+    lowest_ally.stats.heal(heal_amount)
+    return 1
+
+
 # Registry efektów itemów
 ITEM_EFFECT_APPLICATORS: Dict[str, Callable] = {
     "stat_bonus": apply_stat_bonus,
@@ -242,6 +407,14 @@ ITEM_EFFECT_APPLICATORS: Dict[str, Callable] = {
     "shield": apply_shield,
     "slow": apply_slow,
     "damage": apply_damage,
+    # Set 16 additions
+    "sunder": apply_sunder,
+    "shred": apply_shred,
+    "burn": apply_burn,
+    "wound": apply_wound,
+    "percent_max_hp_heal": apply_percent_max_hp_heal,
+    "percent_missing_hp_heal": apply_percent_missing_hp_heal,
+    "heal_lowest_ally": apply_heal_lowest_ally,
 }
 
 
@@ -496,6 +669,13 @@ class ItemManager:
             return
         
         self._apply_triggered_effects(killer, TriggerType.ON_KILL, victim)
+    
+    def on_crit(self, attacker: "Unit", defender: "Unit") -> None:
+        """Wywoływane gdy jednostka trafia krytycznie (Striker's Flail)."""
+        if not attacker.is_alive():
+            return
+        
+        self._apply_triggered_effects(attacker, TriggerType.ON_CRIT, defender)
     
     # ─────────────────────────────────────────────────────────────────────────
     # CONDITIONAL EFFECTS (DAMAGE CALC)

@@ -1,18 +1,15 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# DEFINICJE PRZEDMIOTÓW
+# SET 16 ITEMS - PRZEDMIOTY
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# System procentowych statystyk:
+# System statystyk:
 #   ad_percent: 0.35 = +35% bazowego AD
 #   ap_percent: 0.50 = +50% bazowego AP
-#   
-# Każdy item może mieć:
-#   - stats: flat lub percent bonusy
-#   - effects: triggerowane efekty (on_hit, on_ability_cast, etc.)
-#   - conditional_effects: efekty warunkowe (Giant Slayer, etc.)
-#   - flags: specjalne flagi (ability_crit, etc.)
-#   - grants_traits: traity nadawane przez item
-#   - unique: true = tylko jeden taki item per jednostka
+#   durability: 0.10 = 10% redukcji otrzymywanych obrażeń  
+#   damage_amp: 0.08 = 8% więcej zadawanych obrażeń
+#
+# Sunder/Shred: odświeżają duration (nie stackują wartości)
+# Stack groups: wspólne limity dla różnych triggerów
 #
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -20,89 +17,137 @@ items:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # KOMPONENTY (PODSTAWOWE ITEMY)
-  # AD/AP = procentowe bonusy (z bazy)
-  # Armor/MR/HP = flat bonusy
   # ═══════════════════════════════════════════════════════════════════════════
   
   bf_sword:
-    name: "B.F. Sword"
+    name: "K.P. Miecz"
     description: "+10% Attack Damage"
     stats:
       ad_percent: 0.10
-  
-  needlessly_large_rod:
-    name: "Needlessly Large Rod"
-    description: "+10% Ability Power"
-    stats:
-      ap_percent: 0.10
-  
-  chain_vest:
-    name: "Chain Vest"
-    description: "+20 Armor"
-    stats:
-      armor: 20
-  
-  negatron_cloak:
-    name: "Negatron Cloak"
-    description: "+20 Magic Resist"
-    stats:
-      magic_resist: 20
-  
-  giants_belt:
-    name: "Giant's Belt"
-    description: "+150 HP"
-    stats:
-      hp: 150
-  
+
   recurve_bow:
-    name: "Recurve Bow"
+    name: "Wygięty Łuk"
     description: "+10% Attack Speed"
     stats:
       as_percent: 0.10
-  
+
+  needlessly_large_rod:
+    name: "Absurdalnie Wielka Różdżka"
+    description: "+10 Ability Power"
+    stats:
+      ability_power: 10
+
   tear_of_goddess:
-    name: "Tear of the Goddess"
+    name: "Łza Bogini"
     description: "+15 Starting Mana"
     stats:
       start_mana: 15
-  
+
+  chain_vest:
+    name: "Kamizelka Kolczuga"
+    description: "+20 Armor"
+    stats:
+      armor: 20
+
+  negatron_cloak:
+    name: "Płaszcz Negacji"
+    description: "+20 Magic Resist"
+    stats:
+      magic_resist: 20
+
+  giants_belt:
+    name: "Pas Giganta"
+    description: "+150 HP"
+    stats:
+      hp: 150
+
   sparring_gloves:
-    name: "Sparring Gloves"
-    description: "+10% Crit Chance, +10% Dodge Chance"
+    name: "Rękawice Sparingowe"
+    description: "+10% Crit Chance, +10% Dodge"
     stats:
       crit_chance: 0.10
       dodge_chance: 0.10
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # COMBINED ITEMS - AD FOCUSED
+  # PRZEDMIOTY OFENSYWNE (AD / AS)
   # ═══════════════════════════════════════════════════════════════════════════
-  
+
+  deathblade:
+    name: "Deathblade"
+    description: "+50% AD. +8% Damage Amp."
+    components: ["bf_sword", "bf_sword"]
+    stats:
+      ad_percent: 0.50
+      damage_amp: 0.08
+    unique: true
+
   infinity_edge:
     name: "Infinity Edge"
-    description: "+35% AD, +35% crit damage. Abilities can crit."
+    description: "+35% AD, +35% Crit DMG. Abilities can crit (+10% Crit DMG if already can)."
     components: ["bf_sword", "sparring_gloves"]
     stats:
       ad_percent: 0.35
       crit_damage: 0.35
     flags:
       ability_crit: true
+    # Conditional: jeśli ability już może critować, daj bonus crit damage
+    conditional_effects:
+      - condition:
+          type: "flag_ability_crit"  # sprawdza czy już ma ability_crit z innego źródła
+        effect:
+          type: "crit_damage_bonus"
+          value: 0.10
     unique: true
-  
-  bloodthirster:
-    name: "Bloodthirster"
-    description: "+20% AD, +25% omnivamp (heal from all damage)."
-    components: ["bf_sword", "negatron_cloak"]
-    stats:
-      ad_percent: 0.20
-      omnivamp: 0.25
-  
-  giant_slayer:
-    name: "Giant Slayer"
-    description: "+10% AD, +10% AS. Deal 20% more damage to targets with >1600 HP."
-    components: ["bf_sword", "recurve_bow"]
+
+  krakens_fury:
+    name: "Kraken's Fury"
+    description: "+10% AD, +10% AS, +20 MR. Attacks give +3.5% AD (max 15 stacks). At 15: +30% AS."
+    components: ["recurve_bow", "negatron_cloak"]
     stats:
       ad_percent: 0.10
-      attack_speed: 0.10
+      as_percent: 0.10
+      magic_resist: 20
+    effects:
+      - triggers: ["on_hit"]
+        effects:
+          - type: "stacking_stat"
+            stat: "attack_damage"
+            value: 0.035
+            max_stacks: 15
+            stack_group: "krakens_stacks"
+            target: "self"
+    max_stacks_effects:
+      stack_group: "krakens_stacks"
+      effects:
+        - type: "stat_bonus"
+          stat: "attack_speed"
+          value: 0.30
+          target: "self"
+
+  last_whisper:
+    name: "Last Whisper"
+    description: "+15% AD, +20% AS, +20% Crit. Physical damage applies 30% Sunder for 3s."
+    components: ["recurve_bow", "sparring_gloves"]
+    stats:
+      ad_percent: 0.15
+      as_percent: 0.20
+      crit_chance: 0.20
+    effects:
+      - triggers: ["on_hit"]
+        effects:
+          - type: "sunder"
+            value: 0.30
+            duration: 90
+            target: "target"
+
+  giant_slayer:
+    name: "Giant Slayer"
+    description: "+25% AD, +25% AP, +10% AS. +15% DMG Amp vs >1600 HP."
+    components: ["bf_sword", "recurve_bow"]
+    stats:
+      ad_percent: 0.25
+      ap_percent: 0.25
+      as_percent: 0.10
     conditional_effects:
       - condition:
           type: "target_max_hp"
@@ -110,179 +155,337 @@ items:
           value: 1600
         effect:
           type: "damage_amp"
-          value: 0.20
+          value: 0.15
 
   titans_resolve:
     name: "Titan's Resolve"
-    description: "Gain 2 AD per attack, stacking up to 25 times."
-    components: ["chain_vest", "recurve_bow"]
+    description: "+10% AS, +20 Armor. Attacks/hits: +2% AD/+2% AP (max 25 shared). At max: +15 Armor/MR, CC immunity."
+    components: ["recurve_bow", "chain_vest"]
     stats:
+      as_percent: 0.10
       armor: 20
-      attack_speed: 0.10
     effects:
-      - trigger: "on_hit"
+      # Wspólny stack_group dla on_hit i on_take_damage!
+      - triggers: ["on_hit", "on_take_damage"]
         effects:
           - type: "stacking_stat"
             stat: "attack_damage"
-            value: 2
+            value: 0.02
             max_stacks: 25
+            stack_group: "titans_stacks"
             target: "self"
+          - type: "stacking_stat"
+            stat: "ability_power"
+            value: 0.02
+            max_stacks: 25
+            stack_group: "titans_stacks"
+            target: "self"
+    max_stacks_effects:
+      stack_group: "titans_stacks"
+      effects:
+        - type: "stat_bonus"
+          stat: "armor"
+          value: 15
+          target: "self"
+        - type: "stat_bonus"
+          stat: "magic_resist"
+          value: 15
+          target: "self"
+        - type: "cc_immunity"
+          target: "self"
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # COMBINED ITEMS - AP FOCUSED
+  # PRZEDMIOTY MAGICZNE (AP / MANA)
   # ═══════════════════════════════════════════════════════════════════════════
-  
+
   rabadons_deathcap:
     name: "Rabadon's Deathcap"
-    description: "+50% AP. More magic power!"
+    description: "+50 AP. +12% Damage Amp."
     components: ["needlessly_large_rod", "needlessly_large_rod"]
     stats:
-      ap_percent: 0.50
+      ability_power: 50
+      damage_amp: 0.12
     unique: true
-  
-  jeweled_gauntlet:
-    name: "Jeweled Gauntlet"
-    description: "+10% AP, +20% crit chance. Abilities can deal critical damage."
-    components: ["sparring_gloves", "needlessly_large_rod"]
-    stats:
-      ap_percent: 0.10
-      crit_chance: 0.20
-    flags:
-      ability_crit: true
-  
-  hextech_gunblade:
-    name: "Hextech Gunblade"
-    description: "+10% AP, +10% AD, +25% omnivamp."
-    components: ["bf_sword", "needlessly_large_rod"]
-    stats:
-      ad_percent: 0.10
-      ap_percent: 0.10
-      omnivamp: 0.25
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # COMBINED ITEMS - UTILITY / MANA
-  # ═══════════════════════════════════════════════════════════════════════════
-  
+  void_staff:
+    name: "Void Staff"
+    description: "+20 AP, +10% AS. Attacks/abilities apply 30% MR Shred for 5s."
+    components: ["needlessly_large_rod", "recurve_bow"]
+    stats:
+      ability_power: 20
+      as_percent: 0.10
+    effects:
+      - triggers: ["on_hit", "on_ability_cast"]
+        effects:
+          - type: "shred"
+            value: 0.30
+            duration: 150
+            target: "target"
+
   blue_buff:
     name: "Blue Buff"
-    description: "+10 starting mana. After casting, gain 10 mana."
+    description: "+20 AP, +20 Mana. Max mana -10. On kill: +8% Damage Amp for 8s."
     components: ["tear_of_goddess", "tear_of_goddess"]
     stats:
-      start_mana: 10
+      ability_power: 20
+      start_mana: 20
+      max_mana_reduction: 10
     effects:
-      - trigger: "on_ability_cast"
+      - triggers: ["on_kill"]
         effects:
-          - type: "mana_grant"
-            value: 10
+          - type: "stat_bonus"
+            stat: "damage_amp"
+            value: 0.08
+            duration: 240
             target: "self"
     unique: true
-  
-  shojin:
+
+  spear_of_shojin:
     name: "Spear of Shojin"
-    description: "+10 AD, +15 mana. Attacks restore 5 mana."
+    description: "+20 AP, +15% AD, +15 Mana. Attacks restore 5 mana."
     components: ["bf_sword", "tear_of_goddess"]
     stats:
-      attack_damage: 10
+      ability_power: 20
+      ad_percent: 0.15
       start_mana: 15
     effects:
-      - trigger: "on_hit"
+      - triggers: ["on_hit"]
         effects:
           - type: "mana_grant"
             value: 5
             target: "self"
 
+  archangels_staff:
+    name: "Archangel's Staff"
+    description: "+20 AP, +15 Mana. Every 5 seconds: +20 AP."
+    components: ["needlessly_large_rod", "tear_of_goddess"]
+    stats:
+      ability_power: 20
+      start_mana: 15
+    effects:
+      - triggers: ["on_interval"]
+        trigger_params:
+          interval: 150
+        effects:
+          - type: "stat_bonus"
+            stat: "ability_power"
+            value: 20
+            target: "self"
+
+  jeweled_gauntlet:
+    name: "Jeweled Gauntlet"
+    description: "+35 AP, +20% Crit. Abilities can crit (+10% Crit DMG if already can)."
+    components: ["needlessly_large_rod", "sparring_gloves"]
+    stats:
+      ability_power: 35
+      crit_chance: 0.20
+    flags:
+      ability_crit: true
+    conditional_effects:
+      - condition:
+          type: "flag_ability_crit"
+        effect:
+          type: "crit_damage_bonus"
+          value: 0.10
+
   # ═══════════════════════════════════════════════════════════════════════════
-  # COMBINED ITEMS - TANK
+  # PRZEDMIOTY OBRONNE (TANK / BRUISER)
   # ═══════════════════════════════════════════════════════════════════════════
-  
+
   warmogs_armor:
     name: "Warmog's Armor"
-    description: "+500 HP. Regenerate 2% max HP per second."
+    description: "+600 HP. +8% Max HP bonus. Regen 2.5% max HP every 2s."
     components: ["giants_belt", "giants_belt"]
     stats:
-      hp: 500
+      hp: 600
+      hp_percent: 0.08
     effects:
-      - trigger: "on_interval"
+      - triggers: ["on_interval"]
         trigger_params:
-          interval: 30  # 1 second at 30 TPS
+          interval: 60
         effects:
-          - type: "heal"
-            value: 0  # Will need custom handling for % max HP
+          - type: "percent_max_hp_heal"
+            value: 0.025
             target: "self"
-            percent_max_hp: 0.02
-  
+
+  gargoyle_stoneplate:
+    name: "Gargoyle Stoneplate"
+    description: "+35 Armor, +35 MR. +10 Armor/MR per enemy targeting holder."
+    components: ["chain_vest", "negatron_cloak"]
+    stats:
+      armor: 35
+      magic_resist: 35
+    # Note: per_targeting_enemies needs simulation support
+
+  steadfast_heart:
+    name: "Steadfast Heart"
+    description: "+200 HP, +20 Armor, +15% Crit. 8% Durability (15% below 50% HP)."
+    components: ["chain_vest", "sparring_gloves"]
+    stats:
+      hp: 200
+      armor: 20
+      crit_chance: 0.15
+      durability: 0.08
+    conditional_effects:
+      - condition:
+          type: "self_hp_percent"
+          operator: "<"
+          value: 0.50
+        effect:
+          type: "durability_bonus"
+          value: 0.07
+
+  dragons_claw:
+    name: "Dragon's Claw"
+    description: "+65 MR. Regenerate 2.5% Max HP every 2 seconds."
+    components: ["negatron_cloak", "negatron_cloak"]
+    stats:
+      magic_resist: 65
+    effects:
+      - triggers: ["on_interval"]
+        trigger_params:
+          interval: 60
+        effects:
+          - type: "percent_max_hp_heal"
+            value: 0.025
+            target: "self"
+
   bramble_vest:
     name: "Bramble Vest"
-    description: "+40 Armor. When hit, deal 75 magic damage to attacker."
+    description: "+55 Armor. +5% Max HP. Reflect magic damage when hit."
     components: ["chain_vest", "chain_vest"]
     stats:
-      armor: 40
+      armor: 55
+      hp_percent: 0.05
     effects:
-      - trigger: "on_take_damage"
+      - triggers: ["on_take_damage"]
         effects:
           - type: "damage"
             value: 75
             damage_type: "magic"
             target: "attacker"
 
-  frozen_heart:
-    name: "Frozen Heart"
-    description: "+25 Armor, +25 MR. Slow nearby enemies by 20%."
-    components: ["chain_vest", "negatron_cloak"]
+  sunfire_cape:
+    name: "Sunfire Cape"
+    description: "+20 Armor, +250 HP. Every 2s: Burn (1% HP/s) and Wound (33%) enemies in 2 hexes."
+    components: ["chain_vest", "giants_belt"]
     stats:
-      armor: 25
-      magic_resist: 25
+      armor: 20
+      hp: 250
     effects:
-      - trigger: "on_interval"
+      - triggers: ["on_interval"]
         trigger_params:
-          interval: 60  # 2 seconds
+          interval: 60
         effects:
-          - type: "slow"
-            value: 0.20
-            duration: 30
+          - type: "burn"
+            value: 0.01
+            duration: 60
             target: "enemies_in_range"
             range: 2
-    grants_traits: ["mystic"]  # Gives Mystic trait!
+          - type: "wound"
+            value: 33
+            duration: 60
+            target: "enemies_in_range"
+            range: 2
+
+  strikers_flail:
+    name: "Striker's Flail"
+    description: "+10% AS, +150 HP, +20% Crit. +10% Damage Amp. Crits give +5% DMG Amp for 5s (max 4 stacks)."
+    components: ["giants_belt", "recurve_bow"]
+    stats:
+      as_percent: 0.10
+      hp: 150
+      crit_chance: 0.20
+      damage_amp: 0.10
+    effects:
+      - triggers: ["on_crit"]
+        effects:
+          - type: "stacking_stat"
+            stat: "damage_amp"
+            value: 0.05
+            max_stacks: 4
+            duration: 150
+            stack_group: "strikers_stacks"
+            target: "self"
+
+  spirit_visage:
+    name: "Spirit Visage"
+    description: "+300 HP, +10% Durability. Regenerate 2.5% missing HP every second."
+    components: ["giants_belt", "negatron_cloak"]
+    stats:
+      hp: 300
+      durability: 0.10
+    effects:
+      - triggers: ["on_interval"]
+        trigger_params:
+          interval: 30
+        effects:
+          - type: "percent_missing_hp_heal"
+            value: 0.025
+            target: "self"
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # COMBINED ITEMS - SPECIAL
+  # PRZEDMIOTY SPECJALNE
   # ═══════════════════════════════════════════════════════════════════════════
-  
+
+  bloodthirster:
+    name: "Bloodthirster"
+    description: "+20% AD, +25% Omnivamp (heal from all damage)."
+    components: ["bf_sword", "negatron_cloak"]
+    stats:
+      ad_percent: 0.20
+      omnivamp: 0.25
+
+  hextech_gunblade:
+    name: "Hextech Gunblade"
+    description: "+10% AD, +10% AP. On damage: Heal lowest HP ally for 15% of damage dealt."
+    components: ["bf_sword", "needlessly_large_rod"]
+    stats:
+      ad_percent: 0.10
+      ap_percent: 0.10
+    effects:
+      - triggers: ["on_damage_dealt"]
+        effects:
+          - type: "heal_lowest_ally"
+            value: 0.15
+            target: "lowest_hp_ally"
+
   hand_of_justice:
     name: "Hand of Justice"
-    description: "+15% AD, +15% AP, +15% omnivamp."
+    description: "+15% AD, +15% AP, +15% Omnivamp."
     components: ["sparring_gloves", "tear_of_goddess"]
     stats:
       ad_percent: 0.15
       ap_percent: 0.15
       omnivamp: 0.15
-  
-  last_whisper:
-    name: "Last Whisper"
-    description: "+10% AD. Deal 30% more damage to targets with shield."
-    components: ["bf_sword", "sparring_gloves"]
-    stats:
-      ad_percent: 0.10
-    conditional_effects:
-      - condition:
-          type: "target_has_shield"
-          operator: ">"
-          value: 0
-        effect:
-          type: "damage_amp"
-          value: 0.30
 
-  dragons_claw:
-    name: "Dragon's Claw"
-    description: "+60 MR. Heal for 5% max HP when hit by ability."
-    components: ["negatron_cloak", "negatron_cloak"]
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SOULSTEALER - Stacking AP on Kill/Takedown
+  # ═══════════════════════════════════════════════════════════════════════════
+  
+  soulstealer:
+    name: "Soulstealer"
+    description: "+20% Omnivamp, +15 Armor, +15 MR, +15 AP. On kill: +25 AP. On takedown: +15 AP."
+    components: ["needlessly_large_rod", "chain_vest"]
+    category: "magic"
     stats:
-      magic_resist: 60
-    effects:
-      - trigger: "on_take_damage"
-        trigger_params:
-          from_ability: true
+      omnivamp: 0.20
+      armor: 15
+      magic_resist: 15
+      ability_power: 15
+    triggers:
+      - type: "on_kill"
         effects:
-          - type: "heal"
-            target: "self"
-            percent_max_hp: 0.05
+          - type: "stacking_stat"
+            stat: "ability_power"
+            value: 25
+            stack_group: "soulstealer_souls"
+            max_stacks: 20  # Max +500 AP from kills
+      - type: "on_takedown"
+        effects:
+          - type: "stacking_stat"
+            stat: "ability_power"
+            value: 15
+            stack_group: "soulstealer_souls"
+            max_stacks: 20  # Shared with on_kill
+    unique: true

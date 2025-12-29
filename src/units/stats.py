@@ -137,6 +137,20 @@ class UnitStats:
     flat_mana: float = field(default=0.0, repr=False)
     flat_omnivamp: float = field(default=0.0, repr=False)  # Heal from ALL damage
     
+    # Set 16: Durability (redukcja otrzymywanych obrażeń, np. 0.1 = 10% mniej DMG)
+    base_durability: float = field(default=0.0, repr=False)
+    flat_durability: float = field(default=0.0, repr=False)
+    
+    # Set 16: Damage Amplification (stały mnożnik zadawanych obrażeń, np. 0.08 = +8% DMG)
+    base_damage_amp: float = field(default=0.0, repr=False)
+    flat_damage_amp: float = field(default=0.0, repr=False)
+    
+    # Set 16: Mana reduction (zmniejsza max mana, np. 10 = -10 max mana)
+    flat_max_mana_reduction: float = field(default=0.0, repr=False)
+    
+    # Set 16: CC immunity flag
+    cc_immune: bool = field(default=False, repr=False)
+    
     # Percent bonuses (mnożniki, np. 0.1 = +10%)
     percent_hp: float = field(default=0.0, repr=False)
     percent_attack_damage: float = field(default=0.0, repr=False)
@@ -320,8 +334,12 @@ class UnitStats:
         return self.base_spell_vamp + self.flat_spell_vamp
     
     def get_max_mana(self) -> float:
-        """Zwraca maksymalną manę."""
-        return self.base_max_mana + self.flat_mana
+        """
+        Zwraca maksymalną manę.
+        
+        Uwzględnia mana reduction z itemów (np. Blue Buff -10).
+        """
+        return max(0, self.base_max_mana + self.flat_mana - self.flat_max_mana_reduction)
     
     def get_omnivamp(self) -> float:
         """
@@ -331,6 +349,31 @@ class UnitStats:
         """
         raw = self.base_omnivamp + self.flat_omnivamp
         return max(0.0, min(1.0, raw))
+    
+    def get_durability(self) -> float:
+        """
+        Zwraca durability (redukcja otrzymywanych obrażeń).
+        
+        Set 16: Multiplikatywne stackowanie!
+        2x 10% durability = (1-0.1) * (1-0.1) = 0.81 = 19% redukcji, nie 20%
+        
+        Wzór: 1 - ((1 - base_durability) * (1 - flat_durability))
+        Ograniczone do [0.0, 0.9] (max 90% redukcji).
+        """
+        # Multiplikatywne stackowanie
+        multiplier = (1 - self.base_durability) * (1 - self.flat_durability)
+        durability = 1 - multiplier
+        return max(0.0, min(0.9, durability))
+    
+    def get_damage_amp(self) -> float:
+        """
+        Zwraca damage amplification (stały mnożnik zadawanych obrażeń).
+        
+        Set 16: Np. 0.08 = +8% obrażeń (Deathblade).
+        Minimum 0.0 (nie ma ujemnego damage amp).
+        """
+        raw = self.base_damage_amp + self.flat_damage_amp
+        return max(0.0, raw)
     
     # ─────────────────────────────────────────────────────────────────────────
     # MODYFIKACJA STATYSTYK

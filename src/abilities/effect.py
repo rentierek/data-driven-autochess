@@ -1211,8 +1211,542 @@ class CleanseEffect(Effect):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# EFFECT REGISTRY
+# CHILL EFFECT (ATTACK SPEED REDUCTION)
 # ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ChillEffect(Effect):
+    """
+    Chill - redukcja Attack Speed (jak Slow ale nazwa TFT).
+    
+    Attributes:
+        value: % redukcji AS per star (0.20 = 20%)
+        duration: Czas trwania w tickach
+    """
+    effect_type: str = "chill"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    value: StarValue = 0.20  # 20% AS reduction
+    duration: StarValue = 60  # 2s
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        slow_percent = get_star_value(self.value, star_level)
+        duration = int(get_star_value(self.duration, star_level))
+        
+        target.add_slow(slow_percent, duration)
+        
+        return EffectResult(
+            effect_type="chill",
+            success=True,
+            value=slow_percent,
+            targets=[target.id],
+            details={"as_reduction": slow_percent, "duration_ticks": duration}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ChillEffect":
+        return cls(
+            value=data.get("value", 0.20),
+            duration=data.get("duration", 60),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SPLASH DAMAGE EFFECT (AOE REDUCTION)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class SplashDamageEffect(Effect):
+    """
+    Damage z splash na adjacent units (jak "50% to adjacent").
+    
+    Attributes:
+        value: Główne obrażenia per star
+        splash_percent: % damage dla adjacent (0.5 = 50%)
+        damage_type: Typ obrażeń
+        scaling: Skalowanie (ap, ad)
+    """
+    effect_type: str = "splash_damage"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    value: StarValue = 100
+    splash_percent: float = 0.5
+    damage_type: DamageType = DamageType.MAGICAL
+    scaling: Optional[str] = "ap"
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        from ..combat.damage import calculate_damage
+        
+        main_damage = calculate_scaled_value(
+            self.value, self.scaling, star_level, caster, target
+        )
+        
+        affected = [target.id]
+        total_damage = 0.0
+        
+        # Main target damage
+        result = calculate_damage(
+            caster, target, main_damage, self.damage_type,
+            simulation.rng, can_crit=False, can_dodge=False, is_ability=True
+        )
+        target.stats.take_damage(result.final_damage)
+        total_damage += result.final_damage
+        
+        # Splash to adjacent
+        splash_damage = main_damage * self.splash_percent
+        for unit in simulation.units:
+            if not unit.is_alive() or unit.team == caster.team:
+                continue
+            if unit.id == target.id:
+                continue
+            # Check if adjacent (distance == 1)
+            if target.position.distance(unit.position) == 1:
+                result = calculate_damage(
+                    caster, unit, splash_damage, self.damage_type,
+                    simulation.rng, can_crit=False, can_dodge=False, is_ability=True
+                )
+                unit.stats.take_damage(result.final_damage)
+                total_damage += result.final_damage
+                affected.append(unit.id)
+        
+        return EffectResult(
+            effect_type="splash_damage",
+            success=True,
+            value=total_damage,
+            targets=affected,
+            details={"main_damage": main_damage, "splash_percent": self.splash_percent}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SplashDamageEffect":
+        dtype = data.get("damage_type", "magical")
+        return cls(
+            value=data.get("value", 100),
+            splash_percent=data.get("splash_percent", 0.5),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            scaling=data.get("scaling", "ap"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# RICOCHET DAMAGE (BOUNCES ON KILL)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class RicochetDamageEffect(Effect):
+    """
+    Damage który odbija się do następnego celu jeśli zabije pierwszy.
+    
+    Attributes:
+        value: Obrażenia per star
+        damage_type: Typ
+        max_bounces: Max odbić
+        scaling: Skalowanie
+    """
+    effect_type: str = "ricochet"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    value: StarValue = 500
+    damage_type: DamageType = DamageType.PHYSICAL
+    max_bounces: int = 3
+    scaling: Optional[str] = "ad"
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        from ..combat.damage import calculate_damage
+        
+        damage = calculate_scaled_value(
+            self.value, self.scaling, star_level, caster, target
+        )
+        
+        affected = []
+        current_target = target
+        remaining_damage = damage
+        bounces = 0
+        
+        while current_target and bounces <= self.max_bounces and remaining_damage > 0:
+            hp_before = current_target.stats.current_hp
+            
+            result = calculate_damage(
+                caster, current_target, remaining_damage, self.damage_type,
+                simulation.rng, can_crit=True, can_dodge=False, is_ability=True
+            )
+            actual_damage = current_target.stats.take_damage(result.final_damage)
+            affected.append(current_target.id)
+            
+            if not current_target.is_alive():
+                # Bounce with excess damage
+                excess = remaining_damage - hp_before
+                remaining_damage = max(0, excess)
+                bounces += 1
+                
+                # Find next target (farthest enemy)
+                enemies = [u for u in simulation.units 
+                          if u.is_alive() and u.team != caster.team and u.id not in affected]
+                if enemies:
+                    current_target = max(enemies, key=lambda u: caster.position.distance(u.position))
+                else:
+                    current_target = None
+            else:
+                break
+        
+        return EffectResult(
+            effect_type="ricochet",
+            success=len(affected) > 0,
+            value=damage,
+            targets=affected,
+            details={"bounces": bounces}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RicochetDamageEffect":
+        dtype = data.get("damage_type", "physical")
+        return cls(
+            value=data.get("value", 500),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            max_bounces=data.get("max_bounces", 3),
+            scaling=data.get("scaling", "ad"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MULTI HIT EFFECT (SLASH X TIMES)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class MultiHitEffect(Effect):
+    """
+    Wielokrotne uderzenia (slash X razy).
+    
+    Attributes:
+        value: Obrażenia per hit per star
+        hits: Liczba uderzeń
+        damage_type: Typ
+        scaling: Skalowanie
+    """
+    effect_type: str = "multi_hit"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    value: StarValue = 50
+    hits: StarValue = 4
+    damage_type: DamageType = DamageType.PHYSICAL
+    scaling: Optional[str] = "ad"
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        from ..combat.damage import calculate_damage
+        
+        damage_per_hit = calculate_scaled_value(
+            self.value, self.scaling, star_level, caster, target
+        )
+        num_hits = int(get_star_value(self.hits, star_level))
+        
+        total_damage = 0.0
+        hits_landed = 0
+        
+        for _ in range(num_hits):
+            if not target.is_alive():
+                break
+            result = calculate_damage(
+                caster, target, damage_per_hit, self.damage_type,
+                simulation.rng, can_crit=True, can_dodge=True, is_ability=True
+            )
+            target.stats.take_damage(result.final_damage)
+            total_damage += result.final_damage
+            hits_landed += 1
+        
+        return EffectResult(
+            effect_type="multi_hit",
+            success=hits_landed > 0,
+            value=total_damage,
+            targets=[target.id],
+            details={"hits": hits_landed, "damage_per_hit": damage_per_hit}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MultiHitEffect":
+        dtype = data.get("damage_type", "physical")
+        return cls(
+            value=data.get("value", 50),
+            hits=data.get("hits", 4),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            scaling=data.get("scaling", "ad"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# BUFF TEAM EFFECT (GRANT STAT TO ALL ALLIES)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class BuffTeamEffect(Effect):
+    """
+    Daje buff całemu teamowi.
+    
+    Attributes:
+        stat: Statystyka do buffowania
+        value: Wartość per star
+        duration: Czas trwania
+        is_percent: Czy wartość jest procentowa
+    """
+    effect_type: str = "buff_team"
+    target_filter: EffectTarget = EffectTarget.ALL_ALLIES
+    
+    stat: str = "attack_speed"
+    value: StarValue = 0.20
+    duration: StarValue = 120  # 4s
+    is_percent: bool = True
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",  # ignored, affects all allies
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        buff_value = get_star_value(self.value, star_level)
+        duration = int(get_star_value(self.duration, star_level))
+        
+        affected = []
+        for unit in simulation.units:
+            if unit.is_alive() and unit.team == caster.team:
+                # Apply temporary stat buff
+                if self.is_percent:
+                    unit.stats.add_percent_modifier(self.stat, buff_value)
+                else:
+                    unit.stats.add_flat_modifier(self.stat, buff_value)
+                affected.append(unit.id)
+        
+        return EffectResult(
+            effect_type="buff_team",
+            success=len(affected) > 0,
+            value=buff_value,
+            targets=affected,
+            details={"stat": self.stat, "duration": duration, "is_percent": self.is_percent}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "BuffTeamEffect":
+        return cls(
+            stat=data.get("stat", "attack_speed"),
+            value=data.get("value", 0.20),
+            duration=data.get("duration", 120),
+            is_percent=data.get("is_percent", True),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SHIELD SELF EFFECT
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ShieldSelfEffect(Effect):
+    """
+    Daje tarczę casterowi.
+    
+    Attributes:
+        value: Wartość tarczy per star
+        duration: Czas trwania
+        scaling: Skalowanie (ap)
+    """
+    effect_type: str = "shield_self"
+    target_filter: EffectTarget = EffectTarget.SELF
+    
+    value: StarValue = 300
+    duration: StarValue = 120  # 4s
+    scaling: Optional[str] = "ap"
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",  # ignored
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        shield_amount = calculate_scaled_value(
+            self.value, self.scaling, star_level, caster, caster
+        )
+        duration = int(get_star_value(self.duration, star_level))
+        
+        caster.add_shield(shield_amount, duration)
+        
+        return EffectResult(
+            effect_type="shield_self",
+            success=True,
+            value=shield_amount,
+            targets=[caster.id],
+            details={"duration_ticks": duration}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ShieldSelfEffect":
+        return cls(
+            value=data.get("value", 300),
+            duration=data.get("duration", 120),
+            scaling=data.get("scaling", "ap"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DASH THROUGH EFFECT (DASH + DAMAGE ALL IN PATH)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class DashThroughEffect(Effect):
+    """
+    Dash do celu, zadając obrażenia wszystkim po drodze.
+    
+    Attributes:
+        value: Obrażenia per star
+        damage_type: Typ obrażeń
+        scaling: Skalowanie
+    """
+    effect_type: str = "dash_through"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    value: StarValue = 80
+    damage_type: DamageType = DamageType.PHYSICAL
+    scaling: Optional[str] = "ad"
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        from ..combat.damage import calculate_damage
+        
+        damage = calculate_scaled_value(
+            self.value, self.scaling, star_level, caster, target
+        )
+        
+        affected = []
+        
+        # Get all enemies in line between caster and target
+        for unit in simulation.units:
+            if not unit.is_alive() or unit.team == caster.team:
+                continue
+            
+            # Simple check: unit is between caster and target
+            dist_to_caster = caster.position.distance(unit.position)
+            dist_to_target = caster.position.distance(target.position)
+            dist_unit_to_target = unit.position.distance(target.position)
+            
+            # If unit is roughly on the path
+            if dist_to_caster + dist_unit_to_target <= dist_to_target + 1:
+                result = calculate_damage(
+                    caster, unit, damage, self.damage_type,
+                    simulation.rng, can_crit=True, can_dodge=True, is_ability=True
+                )
+                unit.stats.take_damage(result.final_damage)
+                affected.append(unit.id)
+        
+        # Move caster to target position (if possible)
+        # Note: actual movement would need grid update
+        
+        return EffectResult(
+            effect_type="dash_through",
+            success=len(affected) > 0,
+            value=damage,
+            targets=affected,
+            details={"enemies_hit": len(affected)}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DashThroughEffect":
+        dtype = data.get("damage_type", "physical")
+        return cls(
+            value=data.get("value", 80),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            scaling=data.get("scaling", "ad"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PERCENT HP DAMAGE
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class PercentHPDamageEffect(Effect):
+    """
+    Obrażenia jako % Max HP celu.
+    
+    Attributes:
+        value: % HP jako obrażenia per star (0.08 = 8%)
+        damage_type: Typ obrażeń
+        is_current: True = current HP, False = max HP
+    """
+    effect_type: str = "percent_hp_damage"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    value: StarValue = 0.08
+    damage_type: DamageType = DamageType.MAGICAL
+    is_current: bool = False  # max HP by default
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        from ..combat.damage import calculate_damage
+        
+        percent = get_star_value(self.value, star_level)
+        
+        if self.is_current:
+            base_damage = target.stats.current_hp * percent
+        else:
+            base_damage = target.stats.get_max_hp() * percent
+        
+        result = calculate_damage(
+            caster, target, base_damage, self.damage_type,
+            simulation.rng, can_crit=False, can_dodge=False, is_ability=True
+        )
+        target.stats.take_damage(result.final_damage)
+        
+        return EffectResult(
+            effect_type="percent_hp_damage",
+            success=True,
+            value=result.final_damage,
+            targets=[target.id],
+            details={"percent": percent, "is_current": self.is_current}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "PercentHPDamageEffect":
+        dtype = data.get("damage_type", "magical")
+        return cls(
+            value=data.get("value", 0.08),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            is_current=data.get("is_current", False),
+        )
+
+
+
 
 EFFECT_REGISTRY: Dict[str, type] = {
     # Offensive
@@ -1222,18 +1756,26 @@ EFFECT_REGISTRY: Dict[str, type] = {
     "execute": ExecuteEffect,
     "sunder": SunderEffect,
     "shred": ShredEffect,
+    "splash_damage": SplashDamageEffect,
+    "ricochet": RicochetDamageEffect,
+    "multi_hit": MultiHitEffect,
+    "percent_hp_damage": PercentHPDamageEffect,
+    "dash_through": DashThroughEffect,
     
     # CC
     "stun": StunEffect,
     "slow": SlowEffect,
+    "chill": ChillEffect,
     "silence": SilenceEffect,
     "disarm": DisarmEffect,
     
     # Support
     "heal": HealEffect,
     "shield": ShieldEffect,
+    "shield_self": ShieldSelfEffect,
     "wound": WoundEffect,
     "buff": BuffEffect,
+    "buff_team": BuffTeamEffect,
     "mana_grant": ManaGrantEffect,
     "cleanse": CleanseEffect,
     

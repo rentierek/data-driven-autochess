@@ -1,0 +1,1630 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SET 16 CHAMPIONS - 100 Units from TFT Set 16
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Automatycznie wygenerowane z champions.json
+# Podział: 14x 1-cost, 19x 2-cost, 16x 3-cost, 26x 4-cost, 25x 5-cost
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+units:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 1-COST UNITS (14)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  anivia:
+    name: "Anivia"
+    cost: 1
+    hp: 500
+    attack_damage: 30
+    armor: 20
+    magic_resist: 20
+    attack_range: 4
+    attack_speed: 0.7
+    max_mana: 45
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [freljord, invoker]
+    ability: "frostbite"
+
+  blitzcrank:
+    name: "Blitzcrank"
+    cost: 1
+    hp: 700
+    attack_damage: 50
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 120
+    start_mana: 60
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [zaun, juggernaut]
+    ability: "static_field"
+
+  briar:
+    name: "Briar"
+    cost: 1
+    hp: 700
+    attack_damage: 45
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.75
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, slayer, juggernaut]
+    ability: "blood_frenzy"
+
+  caitlyn:
+    name: "Caitlyn"
+    cost: 1
+    hp: 500
+    attack_damage: 45
+    armor: 15
+    magic_resist: 15
+    attack_range: 6
+    attack_speed: 0.7
+    max_mana: 90
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [piltover, longshot]
+    ability: "ace_in_the_hole"
+
+  illaoi:
+    name: "Illaoi"
+    cost: 1
+    hp: 700
+    attack_damage: 50
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 100
+    start_mana: 40
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, bruiser]
+    ability: "tentacle_smash"
+
+  jarvaniv:
+    name: "Jarvan IV"
+    cost: 1
+    hp: 700
+    attack_damage: 55
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 100
+    start_mana: 30
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, defender]
+    ability: "demacian_standard"
+
+  jhin:
+    name: "Jhin"
+    cost: 1
+    hp: 444
+    attack_damage: 48
+    armor: 24
+    magic_resist: 24
+    attack_range: 4
+    attack_speed: 0.7
+    max_mana: 70
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, gunslinger]
+    ability: "curtain_call"
+
+  kogmaw:
+    name: "Kog'Maw"
+    cost: 1
+    hp: 500
+    attack_damage: 20
+    armor: 15
+    magic_resist: 15
+    attack_range: 6
+    attack_speed: 0.7
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [void, arcanist, longshot]
+    ability: "caustic_spittle"
+
+  lulu:
+    name: "Lulu"
+    cost: 1
+    hp: 500
+    attack_damage: 25
+    armor: 15
+    magic_resist: 15
+    attack_range: 4
+    attack_speed: 0.7
+    max_mana: 70
+    start_mana: 20
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [yordle, arcanist]
+    ability: "whimsy"
+
+  qiyana:
+    name: "Qiyana"
+    cost: 1
+    hp: 700
+    attack_damage: 45
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.75
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ixtal, slayer]
+    ability: "clear_the_brush"
+
+  rumble:
+    name: "Rumble"
+    cost: 1
+    hp: 700
+    attack_damage: 45
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 110
+    start_mana: 40
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [yordle, defender]
+    ability: "junkyard_titan"
+
+  shen:
+    name: "Shen"
+    cost: 1
+    hp: 700
+    attack_damage: 65
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 75
+    start_mana: 20
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, bruiser]
+    ability: "stand_united"
+
+  sona:
+    name: "Sona"
+    cost: 1
+    hp: 500
+    attack_damage: 20
+    armor: 15
+    magic_resist: 15
+    attack_range: 4
+    attack_speed: 0.7
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, invoker]
+    ability: "power_chord"
+
+  viego:
+    name: "Viego"
+    cost: 1
+    hp: 700
+    attack_damage: 40
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.75
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shadow_isles, quickstriker]
+    ability: "blade_of_the_ruined_king"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 2-COST UNITS (19)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  aphelios:
+    name: "Aphelios"
+    cost: 2
+    hp: 650
+    attack_damage: 20
+    armor: 20
+    magic_resist: 20
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [targon]
+    ability: "incendiary_onslaught"
+
+  ashe:
+    name: "Ashe"
+    cost: 2
+    hp: 550
+    attack_damage: 53
+    armor: 20
+    magic_resist: 20
+    attack_range: 4
+    attack_speed: 0.7
+    max_mana: 80
+    start_mana: 20
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [freljord, quickstriker]
+    ability: "true_ice_arrow"
+
+  bard:
+    name: "Bard "
+    cost: 2
+    hp: 750
+    attack_damage: 30
+    armor: 20
+    magic_resist: 20
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 55
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [caretaker]
+    ability: "travelers_call"
+
+  chogath:
+    name: "Cho'Gath"
+    cost: 2
+    hp: 850
+    attack_damage: 50
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 100
+    start_mana: 40
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [void, juggernaut]
+    ability: "rupture"
+
+  ekko:
+    name: "Ekko"
+    cost: 2
+    hp: 750
+    attack_damage: 35
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.85
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [zaun, disruptor]
+    ability: "parallel_convergence"
+
+  graves:
+    name: "Graves "
+    cost: 2
+    hp: 750
+    attack_damage: 55
+    armor: 45
+    magic_resist: 45
+    attack_range: 2
+    attack_speed: 0.7
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, gunslinger]
+    ability: "collateral_damage"
+
+  neeko:
+    name: "Neeko"
+    cost: 2
+    hp: 850
+    attack_damage: 50
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 80
+    start_mana: 30
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ixtal, arcanist, defender]
+    ability: "pop_blossom"
+
+  orianna:
+    name: "Orianna "
+    cost: 2
+    hp: 550
+    attack_damage: 30
+    armor: 20
+    magic_resist: 20
+    attack_range: 4
+    attack_speed: 0.7
+    max_mana: 60
+    start_mana: 20
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [piltover, invoker]
+    ability: "command_protect"
+
+  poppy:
+    name: "Poppy "
+    cost: 2
+    hp: 850
+    attack_damage: 50
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.7
+    max_mana: 80
+    start_mana: 40
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, yordle, juggernaut]
+    ability: "hammer_shock"
+
+  reksai:
+    name: "Rek'Sai"
+    cost: 2
+    hp: 750
+    attack_damage: 50
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.8
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [void, vanquisher]
+    ability: "burrow"
+
+  sion:
+    name: "Sion"
+    cost: 2
+    hp: 650
+    attack_damage: 50
+    armor: 40
+    magic_resist: 40
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 70
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, bruiser]
+    ability: "soul_furnace"
+
+  teemo:
+    name: "Teemo"
+    cost: 2
+    hp: 550
+    attack_damage: 35
+    armor: 20
+    magic_resist: 20
+    attack_range: 6
+    attack_speed: 0.7
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [yordle, longshot]
+    ability: "toxic_dart"
+
+  tristana:
+    name: "Tristana"
+    cost: 2
+    hp: 550
+    attack_damage: 55
+    armor: 20
+    magic_resist: 20
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [yordle, gunslinger]
+    ability: "buster_shot"
+
+  tryndamere:
+    name: "Tryndamere "
+    cost: 2
+    hp: 750
+    attack_damage: 60
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.7
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [freljord, slayer]
+    ability: "undying_rage"
+
+  twistedfate:
+    name: "Twisted Fate"
+    cost: 2
+    hp: 550
+    attack_damage: 50
+    armor: 20
+    magic_resist: 20
+    attack_range: 4
+    attack_speed: 0.7
+    max_mana: 3
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, quickstriker]
+    ability: "stacked_deck"
+
+  vi:
+    name: "Vi"
+    cost: 2
+    hp: 750
+    attack_damage: 65
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.8
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [piltover, zaun, defender]
+    ability: "relentless_force"
+
+  xinzhao:
+    name: "Xin Zhao"
+    cost: 2
+    hp: 850
+    attack_damage: 50
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 70
+    start_mana: 15
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, ionia, warden]
+    ability: "three_talon_strike"
+
+  yasuo:
+    name: "Yasuo"
+    cost: 2
+    hp: 750
+    attack_damage: 45
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.8
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, slayer]
+    ability: "sweeping_blade"
+
+  yorick:
+    name: "Yorick "
+    cost: 2
+    hp: 850
+    attack_damage: 60
+    armor: 45
+    magic_resist: 45
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 75
+    start_mana: 15
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shadow_isles, warden]
+    ability: "mourning_mist"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 3-COST UNITS (18)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  ahri:
+    name: "Ahri"
+    cost: 3
+    hp: 650
+    attack_damage: 30
+    armor: 25
+    magic_resist: 25
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, arcanist]
+    ability: "foxfire"
+
+  darius:
+    name: "Darius"
+    cost: 3
+    hp: 900
+    attack_damage: 50
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 75
+    start_mana: 15
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, defender]
+    ability: "decimate"
+
+  drmundo:
+    name: "Dr. Mundo"
+    cost: 3
+    hp: 900
+    attack_damage: 50
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 80
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [zaun, bruiser]
+    ability: "maximum_dosage"
+
+  draven:
+    name: "Draven"
+    cost: 3
+    hp: 650
+    attack_damage: 45
+    armor: 25
+    magic_resist: 25
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 100
+    start_mana: 60
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, quickstriker]
+    ability: "spinning_axes"
+
+  gangplank:
+    name: "Gangplank"
+    cost: 3
+    hp: 850
+    attack_damage: 45
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.8
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, slayer, vanquisher]
+    ability: "powder_kegs"
+
+  gwen:
+    name: "Gwen "
+    cost: 3
+    hp: 800
+    attack_damage: 40
+    armor: 50
+    magic_resist: 50
+    attack_range: 2
+    attack_speed: 0.8
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shadow_isles, disruptor]
+    ability: "snip_snip"
+
+  jinx:
+    name: "Jinx"
+    cost: 3
+    hp: 650
+    attack_damage: 50
+    armor: 25
+    magic_resist: 25
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 18
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [zaun, gunslinger]
+    ability: "switcheroo"
+
+  kennen:
+    name: "Kennen "
+    cost: 3
+    hp: 900
+    attack_damage: 50
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 125
+    start_mana: 70
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, yordle, defender]
+    ability: "slicing_maelstrom"
+
+  kobuko:
+    name: "Kobuko & Yuumi"
+    cost: 3
+    hp: 950
+    attack_damage: 20
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 90
+    start_mana: 30
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [yordle, bruiser, invoker]
+    ability: "you__me"
+
+  leblanc:
+    name: "LeBlanc "
+    cost: 3
+    hp: 650
+    attack_damage: 35
+    armor: 25
+    magic_resist: 25
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 60
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, invoker]
+    ability: "distortions"
+
+  leona:
+    name: "Leona"
+    cost: 3
+    hp: 1000
+    attack_damage: 50
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 120
+    start_mana: 70
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [targon]
+    ability: "solar_flare"
+
+  loris:
+    name: "Loris"
+    cost: 3
+    hp: 950
+    attack_damage: 60
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 140
+    start_mana: 70
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [piltover, warden]
+    ability: "piltover_tussle"
+
+  malzahar:
+    name: "Malzahar"
+    cost: 3
+    hp: 650
+    attack_damage: 30
+    armor: 25
+    magic_resist: 25
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [void, disruptor]
+    ability: "void_swarm"
+
+  milio:
+    name: "Milio"
+    cost: 3
+    hp: 650
+    attack_damage: 30
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 60
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ixtal, invoker]
+    ability: "ultra_mega_fire_kick"
+
+  nautilus:
+    name: "Nautilus"
+    cost: 3
+    hp: 900
+    attack_damage: 50
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 120
+    start_mana: 60
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, juggernaut, warden]
+    ability: "titans_wrath"
+
+  sejuani:
+    name: "Sejuani"
+    cost: 3
+    hp: 900
+    attack_damage: 60
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 80
+    start_mana: 40
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [freljord, defender]
+    ability: "winters_wrath"
+
+  vayne:
+    name: "Vayne"
+    cost: 3
+    hp: 650
+    attack_damage: 70
+    armor: 25
+    magic_resist: 25
+    attack_range: 6
+    attack_speed: 0.8
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, longshot]
+    ability: "tumble"
+
+  zoe:
+    name: "Zoe"
+    cost: 3
+    hp: 800
+    attack_damage: 35
+    armor: 25
+    magic_resist: 25
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 60
+    start_mana: 30
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [targon]
+    ability: "double_trouble_bubble"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 4-COST UNITS (25)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  ambessa:
+    name: "Ambessa"
+    cost: 4
+    hp: 1100
+    attack_damage: 50
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 20
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, vanquisher]
+    ability: "lacerate"
+
+  belveth:
+    name: "Bel'Veth"
+    cost: 4
+    hp: 1000
+    attack_damage: 65
+    armor: 50
+    magic_resist: 50
+    attack_range: 2
+    attack_speed: 0.85
+    max_mana: 100
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [void, slayer]
+    ability: "endless_banquet"
+
+  braum:
+    name: "Braum"
+    cost: 4
+    hp: 1200
+    attack_damage: 50
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 120
+    start_mana: 60
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [freljord, warden]
+    ability: "unbreakable_frost"
+
+  diana:
+    name: "Diana "
+    cost: 4
+    hp: 1300
+    attack_damage: 50
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [targon]
+    ability: "lunar_rush"
+
+  fizz:
+    name: "Fizz"
+    cost: 4
+    hp: 1000
+    attack_damage: 30
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 20
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, yordle]
+    ability: "playful_trickster"
+
+  garen:
+    name: "Garen"
+    cost: 4
+    hp: 1200
+    attack_damage: 65
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 120
+    start_mana: 50
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, defender]
+    ability: "judgment"
+
+  kaisa:
+    name: "Kai'Sa "
+    cost: 4
+    hp: 850
+    attack_damage: 50
+    armor: 30
+    magic_resist: 30
+    attack_range: 6
+    attack_speed: 0.5
+    max_mana: 10
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [assimilator, void, longshot]
+    ability: "icathian_rain"
+
+  kalista:
+    name: "Kalista "
+    cost: 4
+    hp: 800
+    attack_damage: 50
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 80
+    start_mana: 20
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shadow_isles, vanquisher]
+    ability: "endless_rend"
+
+  lissandra:
+    name: "Lissandra"
+    cost: 4
+    hp: 800
+    attack_damage: 30
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 80
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [freljord, invoker]
+    ability: "frozen_tomb"
+
+  lux:
+    name: "Lux"
+    cost: 4
+    hp: 800
+    attack_damage: 30
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, arcanist]
+    ability: "final_spark"
+
+  missfortune:
+    name: "Miss Fortune"
+    cost: 4
+    hp: 800
+    attack_damage: 50
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, gunslinger]
+    ability: "heartbreaker"
+
+  nasus:
+    name: "Nasus "
+    cost: 4
+    hp: 1500
+    attack_damage: 60
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 80
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shurima]
+    ability: "fury_of_the_sands"
+
+  nidalee:
+    name: "Nidalee "
+    cost: 4
+    hp: 1100
+    attack_damage: 45
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ixtal, huntress]
+    ability: "relentless_pounce"
+
+  renekton:
+    name: "Renekton "
+    cost: 4
+    hp: 1400
+    attack_damage: 75
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shurima]
+    ability: "slice_and_dice"
+
+  riftherald:
+    name: "Rift Herald "
+    cost: 4
+    hp: 1200
+    attack_damage: 60
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.6
+    max_mana: 125
+    start_mana: 60
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [void, bruiser]
+    ability: "warp_armor"
+
+  seraphine:
+    name: "Seraphine"
+    cost: 4
+    hp: 800
+    attack_damage: 30
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 20
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [piltover, disruptor]
+    ability: "grand_encore"
+
+  singed:
+    name: "Singed"
+    cost: 4
+    hp: 1100
+    attack_damage: 15
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.7
+    max_mana: 80
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [zaun, juggernaut]
+    ability: "poison_trail"
+
+  skarner:
+    name: "Skarner "
+    cost: 4
+    hp: 1400
+    attack_damage: 65
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 120
+    start_mana: 60
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ixtal]
+    ability: "impale"
+
+  swain:
+    name: "Swain"
+    cost: 4
+    hp: 1200
+    attack_damage: 40
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 145
+    start_mana: 50
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, arcanist, juggernaut]
+    ability: "nevermove"
+
+  taric:
+    name: "Taric"
+    cost: 4
+    hp: 1300
+    attack_damage: 70
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 80
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [targon]
+    ability: "starlights_touch"
+
+  veigar:
+    name: "Veigar"
+    cost: 4
+    hp: 800
+    attack_damage: 33
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 60
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [yordle, arcanist]
+    ability: "dark_storm"
+
+  warwick:
+    name: "Warwick"
+    cost: 4
+    hp: 1200
+    attack_damage: 60
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 100
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [zaun, quickstriker]
+    ability: "eternal_hunger"
+
+  wukong:
+    name: "Wukong"
+    cost: 4
+    hp: 1050
+    attack_damage: 60
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.65
+    max_mana: 90
+    start_mana: 30
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, bruiser]
+    ability: "diverting_trickster"
+
+  yone:
+    name: "Yone"
+    cost: 4
+    hp: 1100
+    attack_damage: 20
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 100
+    start_mana: 30
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, slayer]
+    ability: "kin_of_the_stained_blade"
+
+  yunara:
+    name: "Yunara"
+    cost: 4
+    hp: 800
+    attack_damage: 65
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.75
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, quickstriker]
+    ability: "transcendent_state"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 5-COST UNITS (24)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  aatrox:
+    name: "Aatrox "
+    cost: 5
+    hp: 900
+    attack_damage: 70
+    armor: 55
+    magic_resist: 55
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [darkin, world_ender, slayer]
+    ability: "the_darkin_blade"
+
+  annie:
+    name: "Annie"
+    cost: 5
+    hp: 800
+    attack_damage: 30
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 170
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [dark_child, arcanist]
+    ability: "enraged_inferno"
+
+  aurelionsol:
+    name: "Aurelion Sol"
+    cost: 5
+    hp: 1100
+    attack_damage: 50
+    armor: 40
+    magic_resist: 40
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 90
+    start_mana: 20
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [star_forger, targon]
+    ability: "the_skies_descend"
+
+  azir:
+    name: "Azir"
+    cost: 5
+    hp: 800
+    attack_damage: 35
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 40
+    start_mana: 20
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shurima, emperor, disruptor]
+    ability: "arise"
+
+  baronnashor:
+    name: "Baron Nashor"
+    cost: 5
+    hp: 3000
+    attack_damage: 120
+    armor: 85
+    magic_resist: 85
+    attack_range: 2
+    attack_speed: 0.5
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [void, riftscourge]
+    ability: "wrath_of_the_void"
+
+  brock:
+    name: "Brock"
+    cost: 5
+    hp: 2000
+    attack_damage: 300
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.5
+    max_mana: 100
+    start_mana: 40
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ixtal]
+    ability: "seismic_slam"
+
+  fiddlesticks:
+    name: "Fiddlesticks"
+    cost: 5
+    hp: 1200
+    attack_damage: 50
+    armor: 60
+    magic_resist: 60
+    attack_range: 2
+    attack_speed: 0.9
+    max_mana: 80
+    start_mana: 40
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [harvester, vanquisher]
+    ability: "crowstorm"
+
+  galio:
+    name: "Galio"
+    cost: 5
+    hp: 1200
+    attack_damage: 50
+    armor: 65
+    magic_resist: 65
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 140
+    start_mana: 90
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [demacia, heroic]
+    ability: "inspirational_might"
+
+  kindred:
+    name: "Kindred"
+    cost: 5
+    hp: 900
+    attack_damage: 73
+    armor: 40
+    magic_resist: 40
+    attack_range: 4
+    attack_speed: 0.9
+    max_mana: 200
+    start_mana: 80
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [eternal, quickstriker]
+    ability: "lambs_respite"
+
+  lucian:
+    name: "Lucian & Senna"
+    cost: 5
+    hp: 900
+    attack_damage: 65
+    armor: 40
+    magic_resist: 40
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 60
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [soulbound, gunslinger]
+    ability: "the_culling"
+
+  mel:
+    name: "Mel "
+    cost: 5
+    hp: 900
+    attack_damage: 50
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 200
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [noxus, disruptor]
+    ability: "radiant_eclipse"
+
+  ornn:
+    name: "Ornn"
+    cost: 5
+    hp: 900
+    attack_damage: 70
+    armor: 55
+    magic_resist: 55
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 150
+    start_mana: 50
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [blacksmith, warden]
+    ability: "call_of_the_forge"
+
+  ryze:
+    name: "Ryze "
+    cost: 5
+    hp: 1100
+    attack_damage: 35
+    armor: 40
+    magic_resist: 40
+    attack_range: 4
+    attack_speed: 0.85
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [rune_mage]
+    ability: "runic_overload"
+
+  sett:
+    name: "Sett"
+    cost: 5
+    hp: 1000
+    attack_damage: 70
+    armor: 50
+    magic_resist: 50
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 90
+    start_mana: 10
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [ionia, the_boss]
+    ability: "the_show_stopper"
+
+  shyvana:
+    name: "Shyvana"
+    cost: 5
+    hp: 1200
+    attack_damage: 80
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [dragonborn, juggernaut]
+    ability: "dragons_descent__flame_breath"
+
+  sylas:
+    name: "Sylas "
+    cost: 5
+    hp: 1600
+    attack_damage: 65
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 30
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [chainbreaker, arcanist, defender]
+    ability: "stolen_might"
+
+  thex:
+    name: "T-Hex"
+    cost: 5
+    hp: 1400
+    attack_damage: 75
+    armor: 70
+    magic_resist: 70
+    attack_range: 2
+    attack_speed: 0.9
+    max_mana: 100
+    start_mana: 30
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [hexmech, piltover, gunslinger]
+    ability: "hextech_arsenal"
+
+  tahmkench:
+    name: "Tahm Kench"
+    cost: 5
+    hp: 1100
+    attack_damage: 70
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.55
+    max_mana: 90
+    start_mana: 10
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [bilgewater, glutton, bruiser]
+    ability: "devour"
+
+  thresh:
+    name: "Thresh "
+    cost: 5
+    hp: 1200
+    attack_damage: 60
+    armor: 70
+    magic_resist: 70
+    attack_range: 1
+    attack_speed: 0.75
+    max_mana: 50
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shadow_isles, warden]
+    ability: "the_box"
+
+  volibear:
+    name: "Volibear "
+    cost: 5
+    hp: 1200
+    attack_damage: 55
+    armor: 60
+    magic_resist: 60
+    attack_range: 1
+    attack_speed: 0.9
+    max_mana: 20
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [freljord, bruiser]
+    ability: "the_relentless_storm"
+
+  xerath:
+    name: "Xerath "
+    cost: 5
+    hp: 900
+    attack_damage: 40
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.8
+    max_mana: 135
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [shurima, ascendant]
+    ability: "eye_of_the_ascendant"
+
+  zaahen:
+    name: "Zaahen"
+    cost: 5
+    hp: 1200
+    attack_damage: 60
+    armor: 80
+    magic_resist: 80
+    attack_range: 2
+    attack_speed: 1.0
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [darkin, immortal]
+    ability: "divine_challenge"
+
+  ziggs:
+    name: "Ziggs "
+    cost: 5
+    hp: 900
+    attack_damage: 65
+    armor: 30
+    magic_resist: 30
+    attack_range: 6
+    attack_speed: 0.85
+    max_mana: 160
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [zaun, yordle, longshot]
+    ability: "mega_inferno_bomb"
+
+  zilean:
+    name: "Zilean"
+    cost: 5
+    hp: 900
+    attack_damage: 40
+    armor: 30
+    magic_resist: 30
+    attack_range: 4
+    attack_speed: 0.9
+    max_mana: 40
+    start_mana: 0
+    crit_chance: 0.25
+    crit_damage: 1.4
+    traits: [chronokeeper, invoker]
+    ability: "visions_of_the_end"

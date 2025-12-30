@@ -287,9 +287,8 @@ class Simulation:
         if self.trait_manager:
             self.trait_manager.on_tick(self.tick)
         
-        # 0b. Item interval triggers
-        if self.item_manager:
-            self.item_manager.on_tick(self.tick)
+        # 0c. 3-Cost mechanics (Intervals, HoTs, Taunts, Zones)
+        self._phase_update_3cost_mechanics()
         
         # 1. Update buffs
         self._phase_update_buffs()
@@ -316,6 +315,89 @@ class Simulation:
             expired = unit.update_buffs()
             for buff in expired:
                 self.logger.log_buff_expire(self.tick, unit.id, buff.id)
+
+    def _phase_update_3cost_mechanics(self) -> None:
+        """Aktualizacja HoTs, interwałów, tauntów i stref."""
+        for unit in self._get_alive_units():
+            # 1. HoTs (Heal Over Time)
+            if hasattr(unit, "hots"):
+                active_hots = []
+                for hot in unit.hots:
+                    if self.tick >= hot["next_tick"]:
+                        from ..abilities.effect import calculate_scaled_value
+                        caster = next((u for u in self.units if u.id == hot["caster_id"]), unit)
+                        heal_val = calculate_scaled_value(hot["value"], hot["scaling"], unit.star_level, caster, unit)
+                        if hot["percent_hp"] > 0:
+                            heal_val += unit.stats.max_hp * hot["percent_hp"]
+                        unit.stats.heal(heal_val)
+                        hot["next_tick"] += hot["tick_rate"]
+                        hot["duration"] -= hot["tick_rate"]
+                        
+                    if hot["duration"] > 0:
+                        active_hots.append(hot)
+                unit.hots = active_hots
+
+            # 2. Interval Triggers (Nautilus, Kobuko)
+            if hasattr(unit, "interval_effects"):
+                for ie in unit.interval_effects:
+                    if self.tick >= ie["next_tick"]:
+                        from ..abilities.effect import create_effect
+                        # Support alternating for Kobuko & Yuumi
+                        eff_data = ie["effect_data"]
+                        if isinstance(eff_data, list): # alternating list
+                            idx = getattr(ie, "alt_index", 0)
+                            current_eff = eff_data[idx]
+                            ie["alt_index"] = (idx + 1) % len(eff_data)
+                        else:
+                            current_eff = eff_data
+                            
+                        eff = create_effect(current_eff.get("type", "damage"), current_eff)
+                        # Determine target
+                        target = unit
+                        if ie["target_type"] == "lowest_hp_ally":
+                            allies = self.get_allies(unit.team)
+                            target = min(allies, key=lambda a: a.stats.hp_percent())
+                        elif ie["target_type"] == "highest_damage_ally":
+                            allies = self.get_allies(unit.team)
+                            # (prosta aproksymacja dla MVP)
+                            target = max(allies, key=lambda a: a.stats.get_attack_damage())
+                        
+                        eff.apply(unit, target, ie["star_level"], self)
+                        ie["next_tick"] += ie["interval"]
+
+            # 3. Taunts
+            if hasattr(unit, "taunt_remaining_ticks") and unit.taunt_remaining_ticks > 0:
+                unit.taunt_remaining_ticks -= 1
+                if unit.taunt_remaining_ticks <= 0:
+                    unit.force_target = None
+
+        # 4. Zones (on_tick effects)
+        if hasattr(self, "active_zones"):
+            active_zones = []
+            for zone in self.active_zones:
+                zone["remaining"] -= 1
+                
+                # On Tick
+                if zone["on_tick_effects"] and (zone["duration"] - zone["remaining"]) % 30 == 0: # co 1s
+                    from ..abilities.effect import create_effect
+                    enemies = self.get_enemies_in_radius(zone["position"], zone["radius"], zone["caster"].team)
+                    for eff_data in zone["on_tick_effects"]:
+                        eff = create_effect(eff_data.get("type", "damage"), eff_data)
+                        for enemy in enemies:
+                            eff.apply(zone["caster"], enemy, zone["star_level"], self)
+
+                # On End
+                if zone["remaining"] <= 0:
+                    if zone["on_end_effects"]:
+                        from ..abilities.effect import create_effect
+                        enemies = self.get_enemies_in_radius(zone["position"], zone["radius"], zone["caster"].team)
+                        for eff_data in zone["on_end_effects"]:
+                            eff = create_effect(eff_data.get("type", "damage"), eff_data)
+                            for enemy in enemies:
+                                eff.apply(zone["caster"], enemy, zone["star_level"], self)
+                else:
+                    active_zones.append(zone)
+            self.active_zones = active_zones
     
     def _phase_check_abilities(self) -> None:
         """Faza 2: Sprawdzenie triggerów umiejętności."""
@@ -406,7 +488,12 @@ class Simulation:
     
     def _ai_idle(self, unit: Unit) -> None:
         """AI dla stanu IDLE - szukaj celu."""
-        target = self._find_target(unit)
+        # Check for forced target (Taunt)
+        forced = getattr(unit, 'force_target', None)
+        if forced and forced.is_alive():
+            target = forced
+        else:
+            target = self._find_target(unit)
         
         if target is None:
             return  # Brak wrogów
@@ -469,6 +556,22 @@ class Simulation:
         
         return closest[0]
     
+    def get_enemies(self, team: int) -> List[Unit]:
+        """Zwraca wszystkich żywych wrogów."""
+        return [u for u in self.units if u.is_alive() and u.team != team]
+    
+    def get_allies(self, team: int) -> List[Unit]:
+        """Zwraca wszystkich żywych sojuszników."""
+        return [u for u in self.units if u.is_alive() and u.team == team]
+    
+    def get_enemies_in_radius(self, position: HexCoord, radius: float, team: int) -> List[Unit]:
+        """Zwraca wrogów w określonym promieniu od pozycji."""
+        return [
+            u for u in self.units 
+            if u.is_alive() and u.team != team and position.distance(u.position) <= radius
+        ]
+
+    
     # ─────────────────────────────────────────────────────────────────────────
     # EXECUTE HELPERS
     # ─────────────────────────────────────────────────────────────────────────
@@ -512,8 +615,28 @@ class Simulation:
         
         target = unit.target
         
-        # Oblicz obrażenia
-        base_damage = unit.stats.get_attack_damage()
+        # Check for empowered attacks (Jhin's Curtain Call)
+        empowered = getattr(unit, 'empowered_attacks', None)
+        is_empowered = empowered and empowered.get('remaining', 0) > 0
+        
+        if is_empowered:
+            # Use empowered attack damage instead of normal
+            attack_num = empowered.get('total', 4) - empowered.get('remaining', 0) + 1
+            base_damage = empowered.get('damage', unit.stats.get_attack_damage())
+            
+            # Check for bonus on last attack (Jhin 4th shot)
+            bonus_on = empowered.get('bonus_on_attack', 4)
+            if attack_num == bonus_on:
+                base_damage *= empowered.get('bonus_multiplier', 1.44)
+            
+            # Decrement remaining
+            empowered['remaining'] -= 1
+            if empowered['remaining'] <= 0:
+                unit.empowered_attacks = None  # Clear when done
+        else:
+            # Normal attack
+            base_damage = unit.stats.get_attack_damage()
+        
         damage_result = calculate_damage(
             attacker=unit,
             defender=target,
@@ -536,6 +659,23 @@ class Simulation:
         if not damage_result.was_dodged:
             # Aplikuj obrażenia
             apply_damage(unit, target, damage_result)
+            
+            # Apply stacking on-hit magic damage (Viego's)
+            stacking_buffs = getattr(unit, 'stacking_buffs', {})
+            magic_on_hit = stacking_buffs.get('magic_damage_on_hit_on_cast', {}).get('total_value', 0)
+            if magic_on_hit > 0:
+                from ..combat.damage import calculate_damage as calc_dmg, apply_damage as app_dmg
+                magic_result = calc_dmg(
+                    attacker=unit,
+                    defender=target,
+                    base_damage=magic_on_hit,
+                    damage_type=DamageType.MAGICAL,
+                    rng=self.rng,
+                    can_crit=False,
+                    can_dodge=False,
+                    is_ability=True,
+                )
+                app_dmg(unit, target, magic_result)
             
             # Item on_hit effects
             if self.item_manager:

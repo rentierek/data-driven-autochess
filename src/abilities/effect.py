@@ -164,6 +164,60 @@ class Effect(ABC):
         """Tworzy efekt z YAML dict."""
         pass
 
+    def _check_condition(self, caster: "Unit", target: "Unit", condition: str, simulation: "Simulation" = None) -> bool:
+        """
+        Sprawdza elastyczne warunki (zastępuje system z DamageEffect).
+        Format: "scope_condition_value" lub "scope_condition"
+        """
+        if not condition:
+            return True
+            
+        parts = condition.split("_")
+        if len(parts) < 2:
+            return False
+
+        scope = parts[0]  # "target" | "caster" | "range"
+        unit = target if scope == "target" else caster if scope == "caster" else None
+
+        # Range-based conditions
+        if scope == "range":
+            distance = caster.position.distance(target.position)
+            if len(parts) >= 3 and parts[1] == "above":
+                threshold = int(parts[2])
+                return distance > threshold
+            elif len(parts) >= 3 and parts[1] == "below":
+                threshold = int(parts[2])
+                return distance < threshold
+            return False
+
+        if unit is None:
+            return False
+
+        cond = "_".join(parts[1:])
+
+        # HP conditions
+        if cond.startswith("below_hp_"):
+            try:
+                threshold = int(cond.split("_")[-1]) / 100.0
+                return unit.stats.hp_percent() < threshold
+            except:
+                return False
+        elif cond.startswith("above_hp_"):
+            try:
+                threshold = int(cond.split("_")[-1]) / 100.0
+                return unit.stats.hp_percent() > threshold
+            except:
+                return False
+                
+        # Status conditions
+        if cond == "has_chill":
+            return getattr(unit, 'chill_remaining_ticks', 0) > 0
+        elif cond == "hit_count_3":
+            # Specyficzne dla Kennena/Ahri - może wymagać śledzenia w unit.state
+            return getattr(unit, 'hit_by_ability_count', 0) >= 3
+
+        return False
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # DAMAGE EFFECT
@@ -178,6 +232,7 @@ class DamageEffect(Effect):
         damage_type: physical/magical/true
         value: Wartość per star [1★, 2★, 3★]
         scaling: Typ skalowania (ad, ap, etc.)
+        crit_condition: Warunek na crit (np. "target_has_chill")
     """
     effect_type: str = "damage"
     target_filter: EffectTarget = EffectTarget.ENEMY
@@ -185,6 +240,14 @@ class DamageEffect(Effect):
     damage_type: DamageType = DamageType.MAGICAL
     value: StarValue = 100
     scaling: Optional[str] = None
+    crit_condition: Optional[str] = None
+    
+    # New for 3-Cost
+    falloff_percent: float = 0.0  # redukcja dmg za każdy kolejny cel
+    execute_threshold: float = 0.0  # HP % poniżej którego zabija natychmiast
+    target_count: int = 1  # liczba celów (np. Jinx rakiety)
+    target_radius: int = 0  # jeśli > 0, szuka celów w radiusie głównego celu
+    on_hit_ricochet: Optional[Dict] = None  # efekt odbicia (jak Lulu/LeBlanc)
     
     def apply(
         self,
@@ -193,47 +256,144 @@ class DamageEffect(Effect):
         star_level: int,
         simulation: "Simulation",
     ) -> EffectResult:
-        # Oblicz damage
-        damage = calculate_scaled_value(
+        # Oblicz damage podstawowy
+        base_val = calculate_scaled_value(
             self.value, self.scaling, star_level, caster, target
         )
         
-        # Importuj damage system
-        from ..combat.damage import calculate_damage, apply_damage, DamageType as DT
+        # Znajdź wszystkie cele
+        targets = [target]
+        if self.target_radius > 0:
+            others = simulation.get_enemies_in_radius(target.position, self.target_radius, caster.team)
+            for o in others:
+                if o.id != target.id:
+                    targets.append(o)
+        elif self.target_count > 1:
+            others = simulation.get_enemies(caster.team)
+            others = sorted(others, key=lambda x: target.position.distance(x.position))
+            for o in others:
+                if o.id != target.id and len(targets) < self.target_count:
+                    targets.append(o)
+
+        results_value = 0
+        hit_ids = []
         
-        # Mapowanie enum
-        dt_map = {
-            DamageType.PHYSICAL: DT.PHYSICAL,
-            DamageType.MAGICAL: DT.MAGICAL,
-            DamageType.TRUE: DT.TRUE,
-        }
-        
-        # Oblicz z redukcją (ability = no crit, no dodge)
-        result = calculate_damage(
-            attacker=caster,
-            defender=target,
-            base_damage=damage,
-            damage_type=dt_map[self.damage_type],
-            rng=simulation.rng,
-            can_crit=False,
-            can_dodge=False,
-            is_ability=True,
-        )
-        
-        # Aplikuj
-        actual = apply_damage(caster, target, result)
-        
+        for i, t in enumerate(targets):
+            # Aplikuj falloff
+            current_dmg = base_val * (1.0 - (self.falloff_percent * i))
+            if current_dmg <= 0:
+                continue
+                
+            # Sprawdź execute threshold
+            if self.execute_threshold > 0 and t.stats.hp_percent() < self.execute_threshold:
+                actual = t.take_damage(t.stats.current_hp + 1000, 2, caster, simulation) # 2 = TRUE
+                results_value += actual
+            else:
+                # Normalny damage
+                is_crit = False
+                if self.crit_condition:
+                    is_crit = self._check_condition(caster, t, self.crit_condition, simulation)
+                
+                final_dmg = current_dmg * (caster.stats.get_crit_damage() if is_crit else 1.0)
+                actual = t.take_damage(final_dmg, self.damage_type, caster, simulation)
+                results_value += actual
+            
+            hit_ids.append(t.id)
+            
+            # On-hit effects (np. ricochet)
+            if self.on_hit_ricochet:
+                from .effect import create_effect
+                eff_data = self.on_hit_ricochet.copy()
+                eff_data.pop("on_hit_ricochet", None)
+                eff = create_effect(eff_data.get("type", "damage"), eff_data)
+                eff.apply(caster, t, star_level, simulation)
+
         return EffectResult(
             effect_type="damage",
-            success=True,
-            value=actual,
-            targets=[target.id],
-            details={
-                "damage_type": self.damage_type.name,
-                "raw": round(damage, 1),
-                "final": round(actual, 1),
-            }
+            success=results_value > 0,
+            value=results_value,
+            targets=hit_ids,
+            details={"crit": self.crit_condition is not None, "targets_hit": len(hit_ids)}
         )
+    
+    def _check_crit_condition(self, caster: "Unit", target: "Unit", condition: str, simulation: "Simulation") -> bool:
+        """
+        Sprawdza elastyczne warunki na crit.
+        
+        Format: "scope_condition_value" lub "scope_condition"
+        Scopes: target, caster
+        Conditions: has_chill, below_hp_X, above_hp_X, stunned, range_above_X, etc.
+        
+        Examples:
+            - "target_has_chill" - target ma debuff chill
+            - "target_below_hp_50" - target HP < 50%
+            - "caster_above_hp_80" - caster HP > 80%
+            - "range_above_4" - dystans > 4 hex
+        """
+        parts = condition.split("_")
+        if len(parts) < 2:
+            return False
+        
+        scope = parts[0]  # "target" | "caster" | "range"
+        unit = target if scope == "target" else caster if scope == "caster" else None
+        
+        # Range-based conditions
+        if scope == "range":
+            distance = caster.position.distance(target.position)
+            if len(parts) >= 3 and parts[1] == "above":
+                threshold = int(parts[2])
+                return distance > threshold
+            elif len(parts) >= 3 and parts[1] == "below":
+                threshold = int(parts[2])
+                return distance < threshold
+            return False
+        
+        if unit is None:
+            return False
+        
+        cond = "_".join(parts[1:])  # Combine remaining parts
+        
+        # Debuff conditions
+        if cond == "has_chill":
+            return getattr(unit, 'chill_remaining_ticks', 0) > 0
+        elif cond == "stunned":
+            return unit.state.is_stunned() if hasattr(unit.state, 'is_stunned') else False
+        elif cond == "silenced":
+            return unit.is_silenced()
+        elif cond == "slowed":
+            return getattr(unit, 'slow_remaining_ticks', 0) > 0
+        elif cond == "burned":
+            return len(getattr(unit, 'burns', [])) > 0
+        
+        # HP conditions
+        elif cond.startswith("below_hp_"):
+            try:
+                threshold = int(cond.split("_")[-1]) / 100.0
+                return unit.stats.hp_percent() < threshold
+            except:
+                return False
+        elif cond.startswith("above_hp_"):
+            try:
+                threshold = int(cond.split("_")[-1]) / 100.0
+                return unit.stats.hp_percent() > threshold
+            except:
+                return False
+        
+        # Stat conditions
+        elif cond.startswith("armor_above_"):
+            try:
+                threshold = int(cond.split("_")[-1])
+                return unit.stats.get_armor() > threshold
+            except:
+                return False
+        elif cond.startswith("mr_above_"):
+            try:
+                threshold = int(cond.split("_")[-1])
+                return unit.stats.get_magic_resist() > threshold
+            except:
+                return False
+        
+        return False
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DamageEffect":
@@ -242,6 +402,7 @@ class DamageEffect(Effect):
             damage_type=DamageType[dt_str],
             value=data.get("value", 100),
             scaling=data.get("scaling"),
+            crit_condition=data.get("crit_condition"),
         )
 
 
@@ -725,6 +886,93 @@ class ShredEffect(Effect):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# HYBRID DAMAGE EFFECT (AD + AP scaling combined)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class HybridDamageEffect(Effect):
+    """
+    Zadaje mieszane obrażenia (AD + AP).
+    """
+    effect_type: str = "hybrid_damage"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    ad_value: StarValue = 0
+    ap_value: StarValue = 0
+    ad_is_percent: bool = False  # jeśli true, ad_value to % AD
+    damage_type: DamageType = DamageType.PHYSICAL
+    
+    # 3-Cost extensions
+    target_count: int = 1
+    target_radius: int = 0
+    falloff_percent: float = 0.0
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        # Znajdź wszystkie cele
+        targets = [target]
+        if self.target_radius > 0:
+            others = simulation.get_enemies_in_radius(target.position, self.target_radius, caster.team)
+            for o in others:
+                if o.id != target.id:
+                    targets.append(o)
+        elif self.target_count > 1:
+            others = simulation.get_enemies(caster.team)
+            others = sorted(others, key=lambda x: target.position.distance(x.position))
+            for o in others:
+                if o.id != target.id and len(targets) < self.target_count:
+                    targets.append(o)
+
+        total_actual = 0.0
+        hit_ids = []
+        
+        for i, t in enumerate(targets):
+            # Oblicz damage AD
+            ad_val = get_star_value(self.ad_value, star_level)
+            ad_dmg = ad_val * caster.stats.get_attack_damage() if self.ad_is_percent else ad_val
+            
+            # Oblicz damage AP
+            ap_val = get_star_value(self.ap_value, star_level)
+            ap_dmg = calculate_scaled_value(ap_val, "ap", star_level, caster, t)
+            
+            base_total = ad_dmg + ap_dmg
+            current_dmg = base_total * (1.0 - (self.falloff_percent * i))
+            
+            if current_dmg <= 0:
+                continue
+                
+            actual = t.take_damage(current_dmg, self.damage_type, caster, simulation)
+            total_actual += actual
+            hit_ids.append(t.id)
+            
+        return EffectResult(
+            effect_type="hybrid_damage",
+            success=total_actual > 0,
+            value=total_actual,
+            targets=hit_ids,
+            details={"ad": ad_dmg, "ap": ap_dmg, "targets_hit": len(hit_ids)}
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "HybridDamageEffect":
+        dtype = data.get("damage_type", "physical")
+        return cls(
+            ad_value=data.get("ad_value", 0),
+            ap_value=data.get("ap_value", 0),
+            ad_is_percent=data.get("ad_is_percent", False),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            target_count=data.get("target_count", 1),
+            target_radius=data.get("target_radius", 0),
+            falloff_percent=data.get("falloff_percent", 0.0)
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # EXECUTE EFFECT
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -955,12 +1203,14 @@ class DisarmEffect(Effect):
 class KnockbackEffect(Effect):
     """
     Odpycha cel o X hexów od castera.
+    Opcjonalnie: tylko jeśli warunek (np. range_below_2) jest spełniony.
     """
     effect_type: str = "knockback"
     target_filter: EffectTarget = EffectTarget.ENEMY
     
     distance: StarValue = 2
     stun_duration: StarValue = 15  # krótki stun po knockback
+    condition: str = ""  # np. "range_below_2" - tylko jeśli w zasięgu 2 hex
     
     def apply(
         self,
@@ -971,6 +1221,18 @@ class KnockbackEffect(Effect):
     ) -> EffectResult:
         distance = int(get_star_value(self.distance, star_level))
         stun_dur = int(get_star_value(self.stun_duration, star_level))
+        
+        # Check condition if specified
+        if self.condition:
+            condition_met = self._check_condition(caster, target, self.condition)
+            if not condition_met:
+                return EffectResult(
+                    effect_type="knockback",
+                    success=False,
+                    value=0,
+                    targets=[target.id],
+                    details={"reason": "condition_not_met", "condition": self.condition}
+                )
         
         # Oblicz kierunek od castera
         dir_q = target.position.q - caster.position.q
@@ -1007,11 +1269,27 @@ class KnockbackEffect(Effect):
             }
         )
     
+    def _check_condition(self, caster: "Unit", target: "Unit", condition: str) -> bool:
+        """Check knockback condition (range-based)."""
+        parts = condition.split("_")
+        if len(parts) >= 3 and parts[0] == "range":
+            try:
+                threshold = int(parts[2])
+                actual_distance = caster.position.distance(target.position)
+                if parts[1] == "below":
+                    return actual_distance < threshold
+                elif parts[1] == "above":
+                    return actual_distance > threshold
+            except:
+                pass
+        return True  # Default: condition met
+    
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "KnockbackEffect":
         return cls(
             distance=data.get("distance", 2),
             stun_duration=data.get("stun_duration", 15),
+            condition=data.get("condition", ""),
         )
 
 
@@ -1076,12 +1354,18 @@ class PullEffect(Effect):
 class DashEffect(Effect):
     """
     Dash castera w kierunku celu lub od celu.
+    
+    Attributes:
+        distance: Dystans w hexach
+        direction: "to_target" | "away_from_target"
+        target_type: "current" | "farthest" | "closest" | "lowest_hp"
     """
     effect_type: str = "dash"
     target_filter: EffectTarget = EffectTarget.SELF
     
     distance: StarValue = 2
     direction: str = "to_target"  # "to_target" | "away_from_target"
+    target_type: str = "current"  # NEW: "current" | "farthest" | "closest" | "lowest_hp"
     
     def apply(
         self,
@@ -1092,25 +1376,69 @@ class DashEffect(Effect):
     ) -> EffectResult:
         distance = int(get_star_value(self.distance, star_level))
         
-        if self.direction == "to_target":
-            dir_q = target.position.q - caster.position.q
-            dir_r = target.position.r - caster.position.r
-        else:  # away_from_target
-            dir_q = caster.position.q - target.position.q
-            dir_r = caster.position.r - target.position.r
-        
-        length = max(1, abs(dir_q) + abs(dir_r))
-        new_q = caster.position.q + int((dir_q / length) * distance)
-        new_r = caster.position.r + int((dir_r / length) * distance)
+        # Select actual target based on target_type
+        actual_target = self._select_target(caster, target, simulation)
+        if actual_target is None:
+            return EffectResult(
+                effect_type="dash",
+                success=False,
+                value=0,
+                targets=[],
+                details={"reason": "no_valid_target"}
+            )
         
         from ..core.hex_coord import HexCoord
-        new_pos = HexCoord(new_q, new_r)
+        
+        if self.direction == "to_target":
+            # Calculate direction towards target
+            dir_q = actual_target.position.q - caster.position.q
+            dir_r = actual_target.position.r - caster.position.r
+            
+            length = max(1, abs(dir_q) + abs(dir_r))
+            norm_q = dir_q / length
+            norm_r = dir_r / length
+            
+            # Find best landing position (adjacent to target, not ON target)
+            best_pos = None
+            best_dist = float('inf')
+            
+            # Try positions from far to close, find closest walkable to target
+            for d in range(distance, 0, -1):
+                new_q = caster.position.q + int(norm_q * d)
+                new_r = caster.position.r + int(norm_r * d)
+                new_pos = HexCoord(new_q, new_r)
+                
+                # Check if valid and walkable (not occupied)
+                if simulation.grid.is_valid(new_pos) and simulation.grid.is_walkable(new_pos):
+                    dist_to_target = new_pos.distance(actual_target.position)
+                    # Must be at least 1 hex away from target (adjacent, not on)
+                    if dist_to_target >= 1 and dist_to_target < best_dist:
+                        best_pos = new_pos
+                        best_dist = dist_to_target
+            
+            # If no position found in direct path, try neighbors of target
+            if best_pos is None:
+                for neighbor in actual_target.position.neighbors():
+                    if simulation.grid.is_valid(neighbor) and simulation.grid.is_walkable(neighbor):
+                        best_pos = neighbor
+                        break
+            
+            new_pos = best_pos
+        else:  # away_from_target
+            dir_q = caster.position.q - actual_target.position.q
+            dir_r = caster.position.r - actual_target.position.r
+            length = max(1, abs(dir_q) + abs(dir_r))
+            new_q = caster.position.q + int((dir_q / length) * distance)
+            new_r = caster.position.r + int((dir_r / length) * distance)
+            new_pos = HexCoord(new_q, new_r)
         
         moved = False
-        if simulation.grid.is_valid(new_pos) and simulation.grid.is_walkable(new_pos):
+        if new_pos and simulation.grid.is_valid(new_pos) and simulation.grid.is_walkable(new_pos):
             simulation.grid.move_unit(caster, new_pos)
             caster.position = new_pos
             moved = True
+            # Set target for immediate attack
+            caster.set_target(actual_target)
         
         return EffectResult(
             effect_type="dash",
@@ -1120,15 +1448,39 @@ class DashEffect(Effect):
             details={
                 "distance": distance,
                 "direction": self.direction,
+                "target_type": self.target_type,
                 "moved": moved,
+                "target_id": actual_target.id if actual_target else None,
             }
         )
+    
+    def _select_target(self, caster: "Unit", default_target: "Unit", simulation: "Simulation") -> Optional["Unit"]:
+        """Select target based on target_type."""
+        if self.target_type == "current":
+            return default_target
+        
+        # Get enemy units
+        enemies = [u for u in simulation.units if u.is_alive() and u.team != caster.team]
+        if not enemies:
+            return None
+        
+        if self.target_type == "farthest":
+            return max(enemies, key=lambda u: caster.position.distance(u.position))
+        elif self.target_type == "closest":
+            return min(enemies, key=lambda u: caster.position.distance(u.position))
+        elif self.target_type == "lowest_hp":
+            return min(enemies, key=lambda u: u.stats.current_hp)
+        elif self.target_type == "lowest_hp_percent":
+            return min(enemies, key=lambda u: u.stats.hp_percent())
+        
+        return default_target
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DashEffect":
         return cls(
             distance=data.get("distance", 2),
             direction=data.get("direction", "to_target"),
+            target_type=data.get("target_type", "current"),
         )
 
 
@@ -1746,6 +2098,666 @@ class PercentHPDamageEffect(Effect):
         )
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# REPLACE ATTACKS EFFECT (Jhin, Aphelios - przekształcenie ataków)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ReplaceAttacksEffect(Effect):
+    """
+    Zastępuje auto-ataki castera wzmocnionymi atakami na X ataków lub sekundy.
+    
+    Attributes:
+        count: Liczba ataków do zastąpienia (lub None dla duration-based)
+        duration: Czas trwania w tickach (lub None dla count-based)
+        damage_type: Typ obrażeń wzmocnionych ataków
+        ad_value: AD scaling per attack
+        ap_value: AP scaling per attack (hybrid)
+        bonus_multiplier: Mnożnik dla specjalnego ataku (np. 4th shot)
+        bonus_on_attack: Który atak jest wzmocniony (np. 4 = czwarty)
+        infinite_range: Czy ataki mają nieskończony zasięg
+    """
+    effect_type: str = "replace_attacks"
+    target_filter: EffectTarget = EffectTarget.SELF
+    
+    count: Optional[int] = 4
+    duration: Optional[StarValue] = None  # Alternative to count
+    damage_type: DamageType = DamageType.PHYSICAL
+    ad_value: StarValue = 125
+    ap_value: StarValue = 15
+    bonus_multiplier: float = 1.0  # For 4th shot bonus
+    bonus_on_attack: Optional[int] = None  # Which attack gets bonus (e.g. 4)
+    infinite_range: bool = False
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        count = self.count or 4
+        duration = int(get_star_value(self.duration, star_level)) if self.duration else None
+        
+        ad_dmg = get_star_value(self.ad_value, star_level)
+        ap_dmg = get_star_value(self.ap_value, star_level)
+        
+        # Calculate total empowered attack damage (AD scaling + AP scaling)
+        ad_ratio = caster.stats.get_attack_damage() / 100.0
+        ap_ratio = caster.stats.get_ability_power() / 100.0
+        total_damage = (ad_dmg * ad_ratio) + (ap_dmg * ap_ratio)
+        
+        # Store replacement attack data on unit
+        caster.empowered_attacks = {
+            "remaining": count,
+            "total": count,  # For tracking which attack number
+            "damage": total_damage,  # Pre-calculated base damage
+            "duration_ticks": duration,
+            "damage_type": self.damage_type.name.lower(),
+            "ad_value": ad_dmg,
+            "ap_value": ap_dmg,
+            "bonus_multiplier": self.bonus_multiplier,
+            "bonus_on_attack": self.bonus_on_attack,
+            "attack_count": 0,
+            "infinite_range": self.infinite_range,
+        }
+        
+        return EffectResult(
+            effect_type="replace_attacks",
+            success=True,
+            value=count,
+            targets=[caster.id],
+            details={
+                "count": count,
+                "damage": round(total_damage, 1),
+                "ad_value": ad_dmg,
+                "ap_value": ap_dmg,
+                "bonus_on": self.bonus_on_attack,
+                "bonus_mult": self.bonus_multiplier,
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ReplaceAttacksEffect":
+        dtype = data.get("damage_type", "physical")
+        return cls(
+            count=data.get("count", 4),
+            duration=data.get("duration"),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            ad_value=data.get("ad_value", 125),
+            ap_value=data.get("ap_value", 15),
+            bonus_multiplier=data.get("bonus_multiplier", 1.0),
+            bonus_on_attack=data.get("bonus_on_attack"),
+            infinite_range=data.get("infinite_range", False),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DECAYING BUFF EFFECT (Briar AS - buff malejący w czasie)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class DecayingBuffEffect(Effect):
+    """
+    Buff który liniowo maleje do 0 przez czas trwania.
+    
+    Attributes:
+        stat: Która statystyka (attack_speed, attack_damage, etc.)
+        value: Początkowa wartość per star
+        duration: Czas trwania w tickach
+        is_percent: Czy to procent
+    """
+    effect_type: str = "decaying_buff"
+    target_filter: EffectTarget = EffectTarget.ALLY
+    
+    stat: str = "attack_speed"
+    value: StarValue = 3.0  # 300% AS
+    duration: StarValue = 120  # 4 seconds
+    is_percent: bool = True
+    buff_target: str = "self"
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        buff_target = caster if self.buff_target == "self" else target
+        
+        initial_value = get_star_value(self.value, star_level)
+        duration = int(get_star_value(self.duration, star_level))
+        
+        # Store decaying buff on unit
+        if not hasattr(buff_target, 'decaying_buffs'):
+            buff_target.decaying_buffs = []
+        
+        buff_target.decaying_buffs.append({
+            "stat": self.stat,
+            "initial_value": initial_value,
+            "current_value": initial_value,
+            "remaining_ticks": duration,
+            "total_duration": duration,
+            "is_percent": self.is_percent,
+        })
+        
+        # Apply initial buff
+        if self.is_percent:
+            buff_target.stats.add_percent_modifier(self.stat, initial_value)
+        else:
+            buff_target.stats.add_flat_modifier(self.stat, initial_value)
+        
+        return EffectResult(
+            effect_type="decaying_buff",
+            success=True,
+            value=initial_value,
+            targets=[buff_target.id],
+            details={
+                "stat": self.stat,
+                "initial_value": initial_value,
+                "duration_ticks": duration,
+                "is_percent": self.is_percent,
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DecayingBuffEffect":
+        return cls(
+            stat=data.get("stat", "attack_speed"),
+            value=data.get("value", 3.0),
+            duration=data.get("duration", 120),
+            is_percent=data.get("is_percent", True),
+            buff_target=data.get("target", "self"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# STACKING BUFF EFFECT (Viego - stacking on-hit damage per cast)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class StackingBuffEffect(Effect):
+    """
+    Buff który stackuje się z każdym triggerem.
+    
+    Attributes:
+        stat: Statystyka do stackowania (lub special: "magic_damage_on_hit")
+        value: Wartość dodawana per stack per star
+        trigger: Kiedy stackować ("on_cast", "on_attack", "on_damage_dealt")
+        frequency: Co ile triggerów dodać stack (1 = każdy, 3 = co trzeci)
+        permanent: Czy stacki są permanentne (całą walkę)
+        max_stacks: Max liczba stacków (None = unlimited)
+    """
+    effect_type: str = "stacking_buff"
+    target_filter: EffectTarget = EffectTarget.SELF
+    
+    stat: str = "magic_damage_on_hit"
+    value: StarValue = 24
+    trigger: str = "on_cast"  # on_cast, on_attack, on_damage_dealt, on_damage_taken
+    frequency: int = 1
+    permanent: bool = True
+    max_stacks: Optional[int] = None
+    buff_target: str = "self"
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        buff_target = caster if self.buff_target == "self" else target
+        
+        stack_value = get_star_value(self.value, star_level)
+        
+        # Initialize stacking system on unit if not present
+        if not hasattr(buff_target, 'stacking_buffs'):
+            buff_target.stacking_buffs = {}
+        
+        buff_key = f"{self.stat}_{self.trigger}"
+        
+        if buff_key not in buff_target.stacking_buffs:
+            buff_target.stacking_buffs[buff_key] = {
+                "stat": self.stat,
+                "value_per_stack": stack_value,
+                "current_stacks": 0,
+                "total_value": 0,
+                "trigger": self.trigger,
+                "frequency": self.frequency,
+                "trigger_count": 0,
+                "permanent": self.permanent,
+                "max_stacks": self.max_stacks,
+            }
+        
+        # If trigger is on_cast, immediately add a stack
+        if self.trigger == "on_cast":
+            buff_data = buff_target.stacking_buffs[buff_key]
+            buff_data["trigger_count"] += 1
+            
+            if buff_data["trigger_count"] >= self.frequency:
+                buff_data["trigger_count"] = 0
+                if self.max_stacks is None or buff_data["current_stacks"] < self.max_stacks:
+                    buff_data["current_stacks"] += 1
+                    buff_data["total_value"] += stack_value
+        
+        current_stacks = buff_target.stacking_buffs[buff_key]["current_stacks"]
+        total_value = buff_target.stacking_buffs[buff_key]["total_value"]
+        
+        return EffectResult(
+            effect_type="stacking_buff",
+            success=True,
+            value=total_value,
+            targets=[buff_target.id],
+            details={
+                "stat": self.stat,
+                "stacks": current_stacks,
+                "value_per_stack": stack_value,
+                "total_value": total_value,
+                "trigger": self.trigger,
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StackingBuffEffect":
+        return cls(
+            stat=data.get("stat", "magic_damage_on_hit"),
+            value=data.get("value", 24),
+            trigger=data.get("trigger", "on_cast"),
+            frequency=data.get("frequency", 1),
+            permanent=data.get("permanent", True),
+            max_stacks=data.get("max_stacks"),
+            buff_target=data.get("target", "self"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# EFFECT GROUP - Grupuje efekty z wspólnym delay/aoe (Cho'Gath)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class EffectGroup(Effect):
+    """
+    Grupuje wiele efektów z wspólnym delay i aoe_radius.
+    """
+    effect_type: str = "effect_group"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    delay: int = 0
+    aoe_radius: int = 0
+    effects_data: List[Dict[str, Any]] = field(default_factory=list)
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        # Note: delay should be handled by simulation layer
+        # Here we just apply all effects
+        results = []
+        
+        for effect_data in self.effects_data:
+            effect_type = effect_data.get("type")
+            if effect_type and effect_type in EFFECT_REGISTRY:
+                effect = EFFECT_REGISTRY[effect_type].from_dict(effect_data)
+                result = effect.apply(caster, target, star_level, simulation)
+                results.append(result)
+        
+        return EffectResult(
+            effect_type="effect_group",
+            success=True,
+            value=len(results),
+            targets=[target.id],
+            details={
+                "delay": self.delay,
+                "aoe_radius": self.aoe_radius,
+                "effects_count": len(results),
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "EffectGroup":
+        return cls(
+            delay=data.get("delay", 0),
+            aoe_radius=data.get("aoe_radius", 0),
+            effects_data=data.get("effects", []),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MANA REAVE - Zwiększa koszt many celu (Yorick)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ManaReaveEffect(Effect):
+    """
+    Zwiększa koszt many następnego casta celu.
+    """
+    effect_type: str = "mana_reave"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    value: int = 20
+    duration: str = "next_cast"  # "next_cast" lub liczba ticków
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        mana_increase = get_star_value(self.value, star_level) if isinstance(self.value, list) else self.value
+        
+        # Store mana reave on target
+        if not hasattr(target, 'mana_reave_stacks'):
+            target.mana_reave_stacks = []
+        
+        target.mana_reave_stacks.append({
+            "value": mana_increase,
+            "duration": self.duration,
+            "source_id": caster.id,
+        })
+        
+        return EffectResult(
+            effect_type="mana_reave",
+            success=True,
+            value=mana_increase,
+            targets=[target.id],
+            details={
+                "mana_increase": mana_increase,
+                "duration": self.duration,
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ManaReaveEffect":
+        return cls(
+            value=data.get("value", 20),
+            duration=data.get("duration", "next_cast"),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROJECTILE SPREAD - 3 pociski w stożku (Twisted Fate)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ProjectileSpreadEffect(Effect):
+    """
+    Wystrzeliwuje N pocisków w stożku, każdy trafia pierwszego wroga.
+    """
+    effect_type: str = "projectile_spread"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    projectile_count: int = 3
+    spread_angle: int = 45
+    range_val: int = 999
+    value: StarValue = 70
+    damage_type: DamageType = DamageType.MAGICAL
+    scaling: str = "ap"
+    falloff_per_enemy: float = 0.0
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        base_damage = calculate_scaled_value(
+            self.value, self.scaling, star_level, caster, target
+        )
+        
+        # Get enemies in cone
+        enemies = [u for u in simulation.units 
+                   if u.is_alive() and u.team != caster.team]
+        
+        total_damage = 0
+        hit_count = 0
+        
+        # Simple implementation: hit up to projectile_count enemies
+        targets_hit = enemies[:self.projectile_count]
+        
+        for i, enemy in enumerate(targets_hit):
+            # Apply falloff
+            falloff = 1.0 - (self.falloff_per_enemy * i)
+            damage = base_damage * max(0.1, falloff)
+            
+            from ..combat.damage import calculate_damage, apply_damage, DamageType as DT
+            dt_map = {
+                DamageType.PHYSICAL: DT.PHYSICAL,
+                DamageType.MAGICAL: DT.MAGICAL,
+                DamageType.TRUE: DT.TRUE,
+            }
+            
+            result = calculate_damage(
+                attacker=caster,
+                defender=enemy,
+                base_damage=damage,
+                damage_type=dt_map[self.damage_type],
+                rng=simulation.rng,
+                can_crit=False,
+                can_dodge=False,
+                is_ability=True,
+            )
+            
+            actual = apply_damage(caster, enemy, result)
+            total_damage += actual
+            hit_count += 1
+        
+        return EffectResult(
+            effect_type="projectile_spread",
+            success=hit_count > 0,
+            value=total_damage,
+            targets=[e.id for e in targets_hit],
+            details={
+                "projectiles": self.projectile_count,
+                "hits": hit_count,
+                "total_damage": round(total_damage, 1),
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ProjectileSpreadEffect":
+        dtype = data.get("damage_type", "magical")
+        return cls(
+            projectile_count=data.get("projectile_count", 3),
+            spread_angle=data.get("spread_angle", 45),
+            range_val=data.get("range", 999),
+            value=data.get("value", 70),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype,
+            scaling=data.get("scaling", "ap"),
+            falloff_per_enemy=data.get("falloff_per_enemy", 0.0),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MULTI STRIKE - Sekwencja uderzeń z efektami (Xin Zhao)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class MultiStrikeEffect(Effect):
+    """
+    Wykonuje sekwencję uderzeń, każde z własnymi efektami.
+    Ostatnie uderzenie może mieć dodatkowe efekty.
+    """
+    effect_type: str = "multi_strike"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    hits: int = 3
+    per_hit: List[Dict[str, Any]] = field(default_factory=list)
+    on_final_hit: List[Dict[str, Any]] = field(default_factory=list)
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        results = []
+        
+        for i in range(self.hits):
+            # Apply per_hit effects
+            for effect_data in self.per_hit:
+                effect_type = effect_data.get("type")
+                if effect_type and effect_type in EFFECT_REGISTRY:
+                    effect = EFFECT_REGISTRY[effect_type].from_dict(effect_data)
+                    result = effect.apply(caster, target, star_level, simulation)
+                    results.append(result)
+            
+            # Apply on_final_hit for last strike
+            if i == self.hits - 1:
+                for effect_data in self.on_final_hit:
+                    effect_type = effect_data.get("type")
+                    if effect_type and effect_type in EFFECT_REGISTRY:
+                        effect = EFFECT_REGISTRY[effect_type].from_dict(effect_data)
+                        result = effect.apply(caster, target, star_level, simulation)
+                        results.append(result)
+        
+        return EffectResult(
+            effect_type="multi_strike",
+            success=True,
+            value=self.hits,
+            targets=[target.id],
+            details={
+                "hits": self.hits,
+                "effects_applied": len(results),
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MultiStrikeEffect":
+        return cls(
+            hits=data.get("hits", 3),
+            per_hit=data.get("per_hit", []),
+            on_final_hit=data.get("on_final_hit", []),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CREATE ZONE - Tworzy strefę na czas (Ekko)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class CreateZoneEffect(Effect):
+    """
+    Tworzy persistentną strefę na mapie. (Ekko, Kennen, Nasus)
+    """
+    effect_type: str = "create_zone"
+    radius: float = 1.0
+    duration: int = 90  # 3s
+    on_end_effects: List[Dict] = field(default_factory=list)
+    on_tick_effects: List[Dict] = field(default_factory=list)
+    track_damage_taken: bool = False
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        if not hasattr(simulation, "active_zones"):
+            simulation.active_zones = []
+            
+        zone = {
+            "position": target.position,
+            "radius": self.radius,
+            "duration": self.duration,
+            "remaining": self.duration,
+            "caster": caster,
+            "star_level": star_level,
+            "on_end_effects": self.on_end_effects,
+            "on_tick_effects": self.on_tick_effects,
+            "damage_taken": 0.0 if self.track_damage_taken else None,
+            "affected_targets": []
+        }
+        simulation.active_zones.append(zone)
+        
+        return EffectResult(effect_type="create_zone", success=True, value=float(self.duration))
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CreateZoneEffect":
+        on_end = data.get("on_end_effects", [])
+        if not on_end and "on_end" in data:
+            # Legacy support - on_end can be a list or single dict
+            on_end_raw = data["on_end"]
+            if isinstance(on_end_raw, list):
+                on_end = on_end_raw
+            else:
+                on_end = [on_end_raw]
+            
+        return cls(
+            radius=data.get("radius", 1.0),
+            duration=data.get("duration", 90),
+            on_end_effects=on_end,
+            on_tick_effects=data.get("on_tick_effects", []),
+            track_damage_taken=data.get("track_damage_taken", False)
+        )
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PERMANENT STACK - Stackowanie permanentne (Sion passive)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class PermanentStackEffect(Effect):
+    """
+    Permanentnie stackuje statystykę na trigger (kill, takedown, cast, time).
+    Używane jako passive, nie aktywne.
+    """
+    effect_type: str = "permanent_stack"
+    target_filter: EffectTarget = EffectTarget.SELF
+    
+    stat: str = "max_hp"
+    trigger: str = "on_kill"  # on_kill, on_takedown, on_cast, on_time
+    value: StarValue = 20
+    
+    def apply(
+        self,
+        caster: "Unit",
+        target: "Unit",
+        star_level: int,
+        simulation: "Simulation",
+    ) -> EffectResult:
+        stack_value = get_star_value(self.value, star_level)
+        
+        # Initialize permanent stacks on unit
+        if not hasattr(caster, 'permanent_stacks'):
+            caster.permanent_stacks = {}
+        
+        if self.stat not in caster.permanent_stacks:
+            caster.permanent_stacks[self.stat] = 0
+        
+        caster.permanent_stacks[self.stat] += stack_value
+        
+        # Apply to stats
+        if self.stat == "max_hp":
+            caster.stats.add_flat_modifier("hp", stack_value)
+        elif self.stat == "attack_damage":
+            caster.stats.add_flat_modifier("attack_damage", stack_value)
+        elif self.stat == "ability_power":
+            caster.stats.add_flat_modifier("ability_power", stack_value)
+        
+        total = caster.permanent_stacks[self.stat]
+        
+        return EffectResult(
+            effect_type="permanent_stack",
+            success=True,
+            value=total,
+            targets=[caster.id],
+            details={
+                "stat": self.stat,
+                "added": stack_value,
+                "total": total,
+                "trigger": self.trigger,
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "PermanentStackEffect":
+        return cls(
+            stat=data.get("stat", "max_hp"),
+            trigger=data.get("trigger", "on_kill"),
+            value=data.get("value", 20),
+        )
 
 
 EFFECT_REGISTRY: Dict[str, type] = {
@@ -1760,7 +2772,9 @@ EFFECT_REGISTRY: Dict[str, type] = {
     "ricochet": RicochetDamageEffect,
     "multi_hit": MultiHitEffect,
     "percent_hp_damage": PercentHPDamageEffect,
+    "percent_damage_taken": PercentHPDamageEffect,  # Alias for zone damage
     "dash_through": DashThroughEffect,
+    "hybrid_damage": HybridDamageEffect,  # NEW: AD+AP combined
     
     # CC
     "stun": StunEffect,
@@ -1778,12 +2792,200 @@ EFFECT_REGISTRY: Dict[str, type] = {
     "buff_team": BuffTeamEffect,
     "mana_grant": ManaGrantEffect,
     "cleanse": CleanseEffect,
+    "decaying_buff": DecayingBuffEffect,  # NEW: buff that decays over time
+    "stacking_buff": StackingBuffEffect,  # NEW: stacking on trigger
     
     # Displacement
     "knockback": KnockbackEffect,
     "pull": PullEffect,
     "dash": DashEffect,
+    
+    # Special
+    "replace_attacks": ReplaceAttacksEffect,
+    
+    # 2-Cost effects
+    "effect_group": EffectGroup,
+    "mana_reave": ManaReaveEffect,
+    "projectile_spread": ProjectileSpreadEffect,
+    "multi_strike": MultiStrikeEffect,
+    "create_zone": CreateZoneEffect,
+    "permanent_stack": PermanentStackEffect,
 }
+
+
+@dataclass
+class IntervalTriggerEffect(Effect):
+    """
+    Pasywny efekt, który odpala inny efekt co X ticków. (Nautilus, Kobuko)
+    """
+    effect_type: str = "interval_trigger"
+    interval: int = 120  # co ile ticków odpala
+    trigger_effect: Dict = field(default_factory=dict)
+    target_type: str = "self"  # na kogo aplikować triggerowany efekt
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Dodajemy do castera info o interwale (obsługiwane w simulation.py lub unit.tick)
+        if not hasattr(caster, "interval_effects"):
+            caster.interval_effects = []
+            
+        caster.interval_effects.append({
+            "interval": self.interval,
+            "next_tick": simulation.current_tick + self.interval,
+            "effect_data": self.trigger_effect,
+            "target_type": self.target_type,
+            "star_level": star_level
+        })
+        
+        return EffectResult(effect_type="interval_trigger", success=True, value=float(self.interval))
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "IntervalTriggerEffect":
+        return cls(
+            interval=data.get("interval", 120),
+            trigger_effect=data.get("effect", {}),
+            target_type=data.get("target_type", "self")
+        )
+
+
+@dataclass
+class ProjectileSwarmEffect(Effect):
+    """
+    Rój pocisków / jaskółek. (Jinx, Malzahar, Ahri)
+    Wiele pocisków, które mogą re-targetować po śmierci celu.
+    """
+    effect_type: str = "projectile_swarm"
+    count: int = 3
+    jumps: int = 1  # Malzahar ma 10 ataków per swarm
+    value: StarValue = 50
+    scaling: str = "ap"
+    damage_type: DamageType = DamageType.MAGICAL
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        count = self.count
+        jumps = self.jumps
+        dmg_val = get_star_value(self.value, star_level)
+        
+        # W tej wersji uproszczonej: od razu zadajemy obrażenia, 
+        # ale emulujemy jaskółki (logic re-targeting byłaby w simulation.py pod projectile)
+        total_dmg = 0
+        targets_hit = []
+        
+        current_target = target
+        for _ in range(count):
+            for _ in range(jumps):
+                if current_target and current_target.is_alive():
+                    # Oblicz dmg
+                    dmg = calculate_scaled_value(dmg_val, self.scaling, star_level, caster, current_target)
+                    actual = current_target.take_damage(dmg, self.damage_type, caster, simulation)
+                    total_dmg += actual
+                    if current_target.id not in targets_hit:
+                        targets_hit.append(current_target.id)
+                else:
+                    # Szukaj nowego celu (re-targeting)
+                    enemies = simulation.get_enemies(caster.team)
+                    if enemies:
+                        current_target = min(enemies, key=lambda e: caster.position.distance(e.position))
+                        # Powtórz dla nowego celu
+                        dmg = calculate_scaled_value(dmg_val, self.scaling, star_level, caster, current_target)
+                        actual = current_target.take_damage(dmg, self.damage_type, caster, simulation)
+                        total_dmg += actual
+                        if current_target.id not in targets_hit:
+                            targets_hit.append(current_target.id)
+                    else:
+                        break
+        
+        return EffectResult(
+            effect_type="projectile_swarm",
+            success=total_dmg > 0,
+            value=total_dmg,
+            targets=targets_hit,
+            details={"count": count, "jumps": jumps}
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ProjectileSwarmEffect":
+        dtype = data.get("damage_type", "magical")
+        return cls(
+            count=data.get("count", 3),
+            jumps=data.get("jumps", 1),
+            value=data.get("value", 50),
+            scaling=data.get("scaling", "ap"),
+            damage_type=DamageType[dtype.upper()] if isinstance(dtype, str) else dtype
+        )
+
+
+
+@dataclass
+class TauntEffect(Effect):
+    """
+    Wymusza na wrogach atakowanie castera. (Loris)
+    """
+    effect_type: str = "taunt"
+    duration: int = 90  # 3s
+    aoe_radius: int = 2
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Znajdź wrogów w promieniu
+        enemies = simulation.get_enemies_in_radius(caster.position, self.aoe_radius, caster.team)
+        for enemy in enemies:
+            enemy.force_target = caster
+            enemy.taunt_remaining_ticks = self.duration
+            
+        return EffectResult(effect_type="taunt", success=len(enemies) > 0, value=float(len(enemies)))
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TauntEffect":
+        return cls(
+            duration=data.get("duration", 90),
+            aoe_radius=data.get("aoe_radius", 2)
+        )
+
+
+@dataclass
+class HealOverTimeEffect(Effect):
+    """
+    Leczenie rozłożone w czasie. (Dr. Mundo, Kobuko)
+    """
+    effect_type: str = "heal_over_time"
+    value: StarValue = 100
+    scaling: str = "ap"
+    value_percent_max_hp: float = 0.0
+    duration: int = 150  # 5s
+    tick_rate: int = 30  # co 1s
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        if not hasattr(target, "hots"):
+            target.hots = []
+            
+        val = get_star_value(self.value, star_level)
+        target.hots.append({
+            "value": val,
+            "scaling": self.scaling,
+            "percent_hp": self.value_percent_max_hp,
+            "duration": self.duration,
+            "tick_rate": self.tick_rate,
+            "next_tick": simulation.current_tick + self.tick_rate,
+            "caster_id": caster.id
+        })
+        
+        return EffectResult(effect_type="heal_over_time", success=True, value=float(val))
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "HealOverTimeEffect":
+        return cls(
+            value=data.get("value", 100),
+            scaling=data.get("scaling", "ap"),
+            value_percent_max_hp=data.get("value_percent_max_hp", 0.0),
+            duration=data.get("duration", 150),
+            tick_rate=data.get("tick_rate", 30)
+        )
+
+
+# Add 3-cost effects to registry
+EFFECT_REGISTRY["interval_trigger"] = IntervalTriggerEffect
+EFFECT_REGISTRY["projectile_swarm"] = ProjectileSwarmEffect
+EFFECT_REGISTRY["taunt"] = TauntEffect
+EFFECT_REGISTRY["heal_over_time"] = HealOverTimeEffect
 
 
 def create_effect(effect_type: str, data: Dict[str, Any]) -> Effect:

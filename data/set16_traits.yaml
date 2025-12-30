@@ -1,0 +1,1212 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SET 16 TRAITS - Origins & Classes
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# MODULAR YAML-BASED TRAIT SYSTEM
+#
+# EFFECT TYPES:
+#   stat_bonus     - Add flat value to stat
+#   stat_percent   - Add percent of base stat
+#   damage_amp     - Increase outgoing damage %
+#   damage_reduction - Reduce incoming damage %
+#   shield         - Grant shield (flat or % HP)
+#   heal           - Heal HP
+#   mana           - Grant mana
+#
+# CONDITIONAL MODIFIERS (simple flags):
+#   condition: "holder"           - Only trait holders
+#   condition: "above_hp:0.50"    - When above 50% HP
+#   condition: "below_hp:0.25"    - When below 25% HP
+#   condition: "per_trait:yordle" - Per unique trait unit
+#   condition: "target_missing_hp" - Scale with target missing HP
+#   condition: "self_missing_hp"  - Scale with own missing HP
+#   condition: "per_hex_distance" - Scale with hex distance
+#
+# TRIGGERS:
+#   on_battle_start - At tick 0
+#   on_interval     - Every X ticks
+#   on_hp_threshold - When HP drops below %
+#   on_death        - When unit dies
+#   on_first_cast   - First ability use
+#   on_team_hp_loss - When team loses % HP
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+traits:
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ORIGINS
+# ═══════════════════════════════════════════════════════════════════════════
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # BILGEWATER - Currency shop (SKIP - requires shop system)
+  # ─────────────────────────────────────────────────────────────────────────
+  bilgewater:
+    name: "Bilgewater"
+    description: "Earn Silver Serpents for the Black Market. (Not implemented)"
+    thresholds:
+      3: { effects: [] }
+      5: { effects: [] }
+      7: { effects: [] }
+      10: { effects: [] }
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # DARKIN - Omnivamp + healing mechanics
+  # ─────────────────────────────────────────────────────────────────────────
+  darkin:
+    name: "Darkin"
+    description: "Darkin units gain Omnivamp. Healing triggers bonus damage."
+    thresholds:
+      1:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: omnivamp
+            value: 0.15
+            target: holders
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: omnivamp
+            value: 0.15
+            target: holders
+          # Note: Tactician healing damage not simulated
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: omnivamp
+            value: 0.15
+            target: holders
+        interval_effects:
+          trigger: on_interval
+          interval: 30
+          condition: healed_600
+          effects:
+            - type: damage
+              value: 100
+              damage_type: magical
+              target: nearest_2_enemies
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # DEMACIA - Armor/MR + Rally on team HP loss
+  # ─────────────────────────────────────────────────────────────────────────
+  demacia:
+    name: "Demacia"
+    description: "Gain Armor and MR. Rally reduces mana costs when team loses HP."
+    thresholds:
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: armor
+            value: 12
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 12
+            target: holders
+        rally:
+          trigger: on_team_hp_loss
+          threshold: 0.25
+          stackable: true
+          effects:
+            - type: mana_cost_reduction
+              value: 0.10
+              target: holders
+      5:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: armor
+            value: 25
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 25
+            target: holders
+        rally:
+          trigger: on_team_hp_loss
+          threshold: 0.25
+          effects:
+            - type: mana_cost_reduction
+              value: 0.10
+      7:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: armor
+            value: 25
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 25
+            target: holders
+        rally:
+          trigger: on_team_hp_loss
+          threshold: 0.25
+          effects:
+            - type: mana_cost_reduction
+              value: 0.10
+            - type: damage
+              value_percent_max_hp: 0.05
+              target: enemies
+              damage_type: magical
+      11:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: armor
+            value: 150
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 150
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # FRELJORD - Frozen Tower spawns with auras
+  # ─────────────────────────────────────────────────────────────────────────
+  freljord:
+    name: "Freljord"
+    description: "Summon Frozen Towers. Front = HP, Back = Damage Amp."
+    thresholds:
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: spawn_tower
+            position: center
+            auras:
+              front:
+                stat: hp
+                value_percent: 0.08
+              back:
+                stat: damage_amp
+                value: 0.10
+            holder_multiplier: 1.5
+      5:
+        trigger: on_battle_start
+        effects:
+          - type: spawn_tower
+            count: 2
+            auras:
+              front:
+                stat: hp
+                value_percent: 0.12
+              back:
+                stat: damage_amp
+                value: 0.16
+            holder_multiplier: 1.5
+      7:
+        trigger: on_battle_start
+        effects:
+          - type: spawn_tower
+            count: 2
+            on_death:
+              type: stun
+              radius: 2
+              duration: 45
+            auras:
+              front:
+                stat: hp
+                value_percent: 0.16
+              back:
+                stat: damage_amp
+                value: 0.22
+            holder_multiplier: 1.5
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # IONIA - Path selection with double bonus as Spirit
+  # ─────────────────────────────────────────────────────────────────────────
+  ionia:
+    name: "Ionia"
+    description: "Choose a Path. Ionians gain Enlightenment, doubled in Spirit form."
+    paths:
+      precision:
+        stat: crit_chance
+        value: 0.20
+      generosity:
+        gold_per_round: 2
+      spirit:
+        stat: hp
+        value: 200
+        stacking:
+          stat: ad
+          value: 3
+          stat2: ap
+          value2: 3
+    thresholds:
+      3:
+        multiplier: 1.0
+      6:
+        multiplier: 2.0
+      9:
+        multiplier: 3.0
+        spirit_form: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # IXTAL - Quest system (SKIP - requires quest UI)
+  # ─────────────────────────────────────────────────────────────────────────
+  ixtal:
+    name: "Ixtal"
+    description: "Complete quests for Sunshards. (Not implemented)"
+    thresholds:
+      3: { effects: [] }
+      5: { effects: [] }
+      7: { effects: [] }
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # NOXUS - Summon Atakhan
+  # ─────────────────────────────────────────────────────────────────────────
+  noxus:
+    name: "Noxus"
+    description: "When enemies lose 15% HP, summon Atakhan."
+    thresholds:
+      3:
+        trigger: on_enemy_hp_threshold
+        threshold: 0.15
+        effects:
+          - type: summon
+            unit: atakhan
+            star_level_source: noxus_count
+            ability:
+              type: damage
+              radius: 2
+              damage_type: magical
+              value: 200
+      5:
+        trigger: on_enemy_hp_threshold
+        threshold: 0.15
+        effects:
+          - type: summon
+            unit: atakhan
+            star_level_source: noxus_count
+        atakhan_alive_bonus:
+          - type: stat_bonus
+            stat: ad
+            value: 20
+            target: holders
+          - type: stat_bonus
+            stat: ap
+            value: 20
+            target: holders
+      7:
+        trigger: on_enemy_hp_threshold
+        threshold: 0.15
+        effects:
+          - type: summon
+            unit: atakhan
+            soul_drain: true
+      10:
+        trigger: on_time
+        time: 300
+        effects:
+          - type: bring_ruin
+            damage: 9999
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # PILTOVER - Invention modules (SKIP - requires module UI)
+  # ─────────────────────────────────────────────────────────────────────────
+  piltover:
+    name: "Piltover"
+    description: "Build an Invention that activates after 8 seconds. (Not implemented)"
+    thresholds:
+      2: { effects: [] }
+      4: { effects: [] }
+      6: { effects: [] }
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SHADOW ISLES - Souls grant AD/AP
+  # ─────────────────────────────────────────────────────────────────────────
+  shadow_isles:
+    name: "Shadow Isles"
+    description: "Gain Souls when anything dies. Souls boost AD and AP."
+    passive:
+      on_any_death: grant_souls
+    thresholds:
+      2:
+        trigger: on_battle_start
+        soul_multiplier: 1.0
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.18
+            target: holders
+          - type: stat_percent
+            stat: ap
+            value: 0.18
+            target: holders
+      3:
+        soul_multiplier: 1.3
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.20
+            target: holders
+          - type: stat_percent
+            stat: ap
+            value: 0.20
+            target: holders
+      4:
+        soul_multiplier: 1.6
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.22
+            target: holders
+          - type: stat_percent
+            stat: ap
+            value: 0.22
+            target: holders
+      5:
+        soul_multiplier: 1.9
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.25
+            target: holders
+          - type: stat_percent
+            stat: ap
+            value: 0.25
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SHURIMA - Interval AS + Heal, HP bonus
+  # ─────────────────────────────────────────────────────────────────────────
+  shurima:
+    name: "Shurima"
+    description: "Gain AS and heal per second. Start with bonus effects."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: hp
+            value: 0.20
+            target: holders
+        interval_effects:
+          trigger: on_interval
+          interval: 30
+          effects:
+            - type: stat_bonus
+              stat: attack_speed
+              value: 0.02
+              target: holders
+            - type: heal
+              value: 20
+              target: holders
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: hp
+            value: 0.20
+            target: holders
+          - type: stat_bonus
+            stat: armor
+            value: 50
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 50
+            target: holders
+        interval_effects:
+          trigger: on_interval
+          interval: 30
+          effects:
+            - type: stat_bonus
+              stat: attack_speed
+              value: 0.02
+            - type: heal
+              value: 20
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: hp
+            value: 0.20
+            target: holders
+          - type: stat_bonus
+            stat: armor
+            value: 50
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 50
+            target: holders
+        ascend:
+          trigger: on_interval
+          interval: 90
+          effects:
+            - type: ascend_buff
+              duration: 90
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # TARGON - Traitless but stronger
+  # ─────────────────────────────────────────────────────────────────────────
+  targon:
+    name: "Targon"
+    description: "Targon units have no synergy but are individually stronger."
+    thresholds:
+      1:
+        trigger: on_battle_start
+        effects: []
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # VOID - Mutations (module system)
+  # ─────────────────────────────────────────────────────────────────────────
+  void:
+    name: "Void"
+    description: "Void units gain a random mutation and Attack Speed."
+    mutations:
+      razor_claws: { ad: 25, crit_chance: 0.15 }
+      void_armor: { armor: 40, mr: 40 }
+      void_speed: { attack_speed: 0.30 }
+      mana_siphon: { mana_on_hit: 5 }
+    thresholds:
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: random_mutation
+            target: holders
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.15
+            target: holders
+      6:
+        effects:
+          - type: random_mutation
+            target: holders
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.30
+            target: holders
+      9:
+        effects:
+          - type: random_mutation
+            target: holders
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.45
+            target: holders
+          - type: void_rift
+            damage_amp: 0.30
+            plasma_damage: 50
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # YORDLE - Stats per unique Yordle
+  # ─────────────────────────────────────────────────────────────────────────
+  yordle:
+    name: "Yordle"
+    description: "Yordles gain HP and AS per unique Yordle. 3-star = 2x bonus."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: hp
+            value: 40
+            target: holders
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.05
+            target: holders
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: hp
+            value: 40
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.05
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+        # Plus shop bonus (not simulated)
+      6:
+        effects:
+          - type: stat_bonus
+            stat: hp
+            value: 40
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.05
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+        # Plus free reroll (not simulated)
+      8:
+        effects:
+          - type: stat_bonus
+            stat: hp
+            value: 40
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.05
+            condition: per_trait:yordle
+            three_star_bonus: 2.0
+        # Plus grab bag (not simulated)
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ZAUN - Shimmer-Fused timed buff
+  # ─────────────────────────────────────────────────────────────────────────
+  zaun:
+    name: "Zaun"
+    description: "After 4s become Shimmer-Fused: Durability + decaying AS."
+    thresholds:
+      3:
+        trigger: on_time
+        time: 120
+        effects:
+          - type: shimmer_fused
+            durability: 0.10
+            attack_speed: 0.90
+            decay_duration: 120
+            target: holders
+        refresh_time: 120
+      5:
+        trigger: on_hp_threshold
+        threshold: 0.60
+        effects:
+          - type: heal_percent
+            value: 0.25
+            duration: 90
+            target: holders
+          - type: shimmer_fused
+            instant: true
+            durability: 0.10
+            attack_speed: 0.90
+        refresh_time: 120
+      7:
+        trigger: on_time
+        time: 90
+        effects:
+          - type: shimmer_fused
+            durability: 0.15
+            attack_speed: 1.35
+            decay_duration: 120
+        refresh_time: 90
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CLASSES
+# ═══════════════════════════════════════════════════════════════════════════
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ARCANIST - Team AP + Holder bonus AP
+  # ─────────────────────────────────────────────────────────────────────────
+  arcanist:
+    name: "Arcanist"
+    description: "Team gains AP. Arcanists gain more."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: ap
+            value: 18
+            target: team
+          - type: stat_bonus
+            stat: ap
+            value: 25
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: ap
+            value: 25
+            target: team
+          - type: stat_bonus
+            stat: ap
+            value: 45
+            target: holders
+      6:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: ap
+            value: 40
+            target: team
+          - type: stat_bonus
+            stat: ap
+            value: 70
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # BRUISER - Team HP + Holder % HP
+  # ─────────────────────────────────────────────────────────────────────────
+  bruiser:
+    name: "Bruiser"
+    description: "Team gains HP. Bruisers gain % max HP."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: hp
+            value: 150
+            target: team
+          - type: stat_percent
+            stat: hp
+            value: 0.25
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: hp
+            value: 150
+            target: team
+          - type: stat_percent
+            stat: hp
+            value: 0.45
+            target: holders
+      6:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: hp
+            value: 150
+            target: team
+          - type: stat_percent
+            stat: hp
+            value: 0.65
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # DEFENDER - Team Armor/MR + Holder bonus
+  # ─────────────────────────────────────────────────────────────────────────
+  defender:
+    name: "Defender"
+    description: "Team gains Armor and MR. Defenders gain more."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: armor
+            value: 12
+            target: team
+          - type: stat_bonus
+            stat: mr
+            value: 12
+            target: team
+          - type: stat_bonus
+            stat: armor
+            value: 30
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 30
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: armor
+            value: 12
+            target: team
+          - type: stat_bonus
+            stat: mr
+            value: 12
+            target: team
+          - type: stat_bonus
+            stat: armor
+            value: 55
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 55
+            target: holders
+      6:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: armor
+            value: 12
+            target: team
+          - type: stat_bonus
+            stat: mr
+            value: 12
+            target: team
+          - type: stat_bonus
+            stat: armor
+            value: 80
+            target: holders
+          - type: stat_bonus
+            stat: mr
+            value: 80
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # DISRUPTOR - Dazzle debuff (reduce enemy damage)
+  # ─────────────────────────────────────────────────────────────────────────
+  disruptor:
+    name: "Disruptor"
+    description: "Abilities apply Dazzle. Deal bonus damage to dazzled enemies."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: ability_applies_debuff
+            debuff: dazzle
+            value: 0.20
+            duration: 90
+            target: holders
+          - type: damage_vs_debuffed
+            debuff: dazzle
+            bonus: 0.25
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: ability_applies_debuff
+            debuff: dazzle
+            value: 0.20
+            duration: 90
+            target: holders
+          - type: damage_vs_debuffed
+            debuff: dazzle
+            bonus: 0.45
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # GUNSLINGER - AD + Every 4th attack bonus
+  # ─────────────────────────────────────────────────────────────────────────
+  gunslinger:
+    name: "Gunslinger"
+    description: "Gain AD. Every 4th attack deals bonus physical damage."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.20
+            target: holders
+          - type: on_attack_counter
+            count: 4
+            bonus_damage: 100
+            damage_type: physical
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.35
+            target: holders
+          - type: on_attack_counter
+            count: 4
+            bonus_damage: 200
+            damage_type: physical
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # INVOKER - Team mana regen + Holder mana generation
+  # ─────────────────────────────────────────────────────────────────────────
+  invoker:
+    name: "Invoker"
+    description: "Team gains mana per second. Invokers gain more from all sources."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: mana_regen
+            value: 1
+            interval: 30
+            target: team
+          - type: mana_generation_bonus
+            value: 0.25
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: mana_regen
+            value: 1
+            interval: 30
+            target: team
+          - type: mana_generation_bonus
+            value: 0.45
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JUGGERNAUT - Damage reduction (more above 50% HP) + heal on ally death
+  # ─────────────────────────────────────────────────────────────────────────
+  juggernaut:
+    name: "Juggernaut"
+    description: "Gain DR, more above 50% HP. Heal when a Juggernaut dies."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: damage_reduction
+            value: 0.18
+            target: holders
+          - type: damage_reduction
+            value: 0.07
+            condition: above_hp:0.50
+            target: holders
+        on_death:
+          - type: heal_percent
+            value: 0.05
+            target: other_holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: damage_reduction
+            value: 0.20
+            target: holders
+          - type: damage_reduction
+            value: 0.10
+            condition: above_hp:0.50
+            target: holders
+        on_death:
+          - type: heal_percent
+            value: 0.05
+            target: other_holders
+      6:
+        trigger: on_battle_start
+        effects:
+          - type: damage_reduction
+            value: 0.25
+            target: holders
+          - type: damage_reduction
+            value: 0.08
+            condition: above_hp:0.50
+            target: holders
+        on_death:
+          - type: heal_percent
+            value: 0.05
+            target: other_holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # LONGSHOT - Damage amp + bonus per hex distance
+  # ─────────────────────────────────────────────────────────────────────────
+  longshot:
+    name: "Longshot"
+    description: "Gain Damage Amp. Deal more damage to distant targets."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: damage_amp
+            value: 0.18
+            target: holders
+          - type: distance_damage_bonus
+            value: 0.02
+            target: holders
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: damage_amp
+            value: 0.20
+            target: holders
+          - type: distance_damage_bonus
+            value: 0.03
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: damage_amp
+            value: 0.24
+            target: holders
+          - type: distance_damage_bonus
+            value: 0.04
+            target: holders
+      5:
+        trigger: on_battle_start
+        effects:
+          - type: damage_amp
+            value: 0.30
+            target: holders
+          - type: distance_damage_bonus
+            value: 0.05
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # QUICKSTRIKER - Team AS + Holder AS scales with TARGET missing HP
+  # ─────────────────────────────────────────────────────────────────────────
+  quickstriker:
+    name: "Quickstriker"
+    description: "Team gains AS. Quickstrikers gain more AS vs low HP targets."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.15
+            target: team
+          - type: target_missing_hp_as
+            min: 0.10
+            max: 0.30
+            target: holders
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.15
+            target: team
+          - type: target_missing_hp_as
+            min: 0.20
+            max: 0.45
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.15
+            target: team
+          - type: target_missing_hp_as
+            min: 0.30
+            max: 0.60
+            target: holders
+      5:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: attack_speed
+            value: 0.15
+            target: team
+          - type: target_missing_hp_as
+            min: 0.40
+            max: 0.80
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SLAYER - Omnivamp + AD + bonus dmg at low SELF HP
+  # ─────────────────────────────────────────────────────────────────────────
+  slayer:
+    name: "Slayer"
+    description: "Gain Omnivamp and AD. Deal more damage at low HP (up to 50%)."
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.22
+            target: holders
+          - type: stat_bonus
+            stat: omnivamp
+            value: 0.10
+            target: holders
+          - type: self_missing_hp_damage
+            max_bonus: 0.50
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.33
+            target: holders
+          - type: stat_bonus
+            stat: omnivamp
+            value: 0.15
+            target: holders
+          - type: self_missing_hp_damage
+            max_bonus: 0.50
+            target: holders
+      6:
+        trigger: on_battle_start
+        effects:
+          - type: stat_percent
+            stat: ad
+            value: 0.44
+            target: holders
+          - type: stat_bonus
+            stat: omnivamp
+            value: 0.20
+            target: holders
+          - type: self_missing_hp_damage
+            max_bonus: 0.50
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # VANQUISHER - Ability crit + crit stats
+  # ─────────────────────────────────────────────────────────────────────────
+  vanquisher:
+    name: "Vanquisher"
+    description: "Abilities can crit. Gain Crit Chance and Crit Damage."
+    passive:
+      ability_can_crit: true
+    thresholds:
+      2:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: crit_chance
+            value: 0.15
+            target: holders
+          - type: stat_bonus
+            stat: crit_damage
+            value: 0.15
+            target: holders
+      3:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: crit_chance
+            value: 0.20
+            target: holders
+          - type: stat_bonus
+            stat: crit_damage
+            value: 0.20
+            target: holders
+      4:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: crit_chance
+            value: 0.25
+            target: holders
+          - type: stat_bonus
+            stat: crit_damage
+            value: 0.25
+            target: holders
+      5:
+        trigger: on_battle_start
+        effects:
+          - type: stat_bonus
+            stat: crit_chance
+            value: 0.30
+            target: holders
+          - type: stat_bonus
+            stat: crit_damage
+            value: 0.30
+            target: holders
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # WARDEN - Shield at HP thresholds
+  # ─────────────────────────────────────────────────────────────────────────
+  warden:
+    name: "Warden"
+    description: "Gain shield when dropping below 75% and 25% HP."
+    thresholds:
+      2:
+        trigger: on_hp_threshold
+        threshold: 0.75
+        effects:
+          - type: shield_percent_hp
+            value: 0.20
+            target: self
+        secondary:
+          threshold: 0.25
+          effects:
+            - type: shield_percent_hp
+              value: 0.20
+              target: self
+      4:
+        trigger: on_hp_threshold
+        threshold: 0.75
+        effects:
+          - type: shield_percent_hp
+            value: 0.35
+            target: self
+        secondary:
+          threshold: 0.25
+          effects:
+            - type: shield_percent_hp
+              value: 0.35
+              target: self
+      6:
+        trigger: on_hp_threshold
+        threshold: 0.75
+        effects:
+          - type: shield_percent_hp
+            value: 0.50
+            target: self
+        secondary:
+          threshold: 0.25
+          effects:
+            - type: shield_percent_hp
+              value: 0.50
+              target: self
+
+# ═══════════════════════════════════════════════════════════════════════════
+# UNIQUE TRAITS (placeholder - effects added later)
+# ═══════════════════════════════════════════════════════════════════════════
+
+  ascendant:
+    name: "Ascendant"
+    description: "Xerath - Shop contains Ascendant Charm."
+    thresholds: {}
+
+  assimilator:
+    name: "Assimilator"
+    description: "Kai'Sa - Different ability based on AD vs AP."
+    thresholds: {}
+
+  blacksmith:
+    name: "Blacksmith"
+    description: "Ornn - Forge Artifacts over time."
+    thresholds: {}
+
+  caretaker:
+    name: "Caretaker"
+    description: "Bard - Win gives random unit, lose gives rerolls."
+    thresholds: {}
+
+  chainbreaker:
+    name: "Chainbreaker"
+    description: "Sylas - Rotates between 3 abilities."
+    thresholds: {}
+
+  chronokeeper:
+    name: "Chronokeeper"
+    description: "Zilean - Store XP and grant to player."
+    thresholds: {}
+
+  dark_child:
+    name: "Dark Child"
+    description: "Annie - Summon Tibbers to bench."
+    thresholds: {}
+
+  emperor:
+    name: "Emperor"
+    description: "Azir - Summon soldiers."
+    thresholds: {}
+
+  hexmech:
+    name: "HexMech"
+    description: "T-Hex - Unit pilots the mech."
+    thresholds: {}
+
+  riftscourge:
+    name: "Riftscourge"
+    description: "Baron - 2 slots, summons Void Rift."
+    thresholds: {}
+
+  rune_mage:
+    name: "Rune Mage"
+    description: "Ryze - Ability changes by region portal."
+    thresholds: {}
+
+  soulbound:
+    name: "Soulbound"
+    description: "Lucian & Senna - Fight together, swap on cast."
+    thresholds: {}
+
+  star_forger:
+    name: "Star Forger"
+    description: "Aurelion Sol - Gain Stardust to upgrade ability."
+    thresholds: {}
+
+  the_boss:
+    name: "The Boss"
+    description: "Sett - Exits combat to do sit-ups at low HP."
+    thresholds: {}

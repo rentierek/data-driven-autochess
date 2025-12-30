@@ -167,6 +167,219 @@ def apply_mana(units: List["Unit"], effect: TraitEffect) -> int:
     return count
 
 
+def apply_stat_percent(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Stat bonus as percent of base stat.
+    E.g. value=0.25 with stat=hp adds 25% of base HP.
+    """
+    stat = effect.params.get("stat", "hp")
+    percent = effect.value
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        base_stat = f"base_{stat}"
+        if hasattr(unit.stats, base_stat):
+            base_val = getattr(unit.stats, base_stat)
+            bonus = base_val * percent
+            setattr(unit.stats, base_stat, base_val + bonus)
+            if stat == "hp":
+                unit.stats.current_hp += bonus
+        count += 1
+    
+    return count
+
+
+def apply_shield_percent_hp(units: List["Unit"], effect: TraitEffect) -> int:
+    """Shield as percent of max HP."""
+    percent = effect.value
+    duration = effect.params.get("duration", 999)
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        shield_value = unit.stats.max_hp * percent
+        unit.add_shield(int(shield_value), duration)
+        count += 1
+    
+    return count
+
+
+def apply_mana_regen(units: List["Unit"], effect: TraitEffect) -> int:
+    """Grant mana per interval (stored as modifier)."""
+    value = effect.value
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        if not hasattr(unit, 'mana_regen'):
+            unit.mana_regen = 0
+        unit.mana_regen += value
+        count += 1
+    
+    return count
+
+
+def apply_mana_generation_bonus(units: List["Unit"], effect: TraitEffect) -> int:
+    """Bonus % mana from all sources (Invoker)."""
+    value = effect.value
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        if not hasattr(unit, 'mana_gen_mult'):
+            unit.mana_gen_mult = 1.0
+        unit.mana_gen_mult += value
+        count += 1
+    
+    return count
+
+
+def apply_target_missing_hp_as(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Quickstriker: AS scales with TARGET missing HP.
+    min/max define the range (0% missing = min, 100% missing = max).
+    """
+    min_as = effect.params.get("min", 0.10)
+    max_as = effect.params.get("max", 0.30)
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        unit.target_missing_hp_as = {"min": min_as, "max": max_as}
+        count += 1
+    
+    return count
+
+
+def apply_distance_damage_bonus(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Longshot: Bonus damage per hex distance.
+    """
+    value = effect.value  # e.g. 0.02 = 2% per hex
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        unit.distance_damage_bonus = value
+        count += 1
+    
+    return count
+
+
+def apply_self_missing_hp_damage(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Slayer: Bonus damage scales with OWN missing HP.
+    max_bonus = max bonus at 0 HP (e.g. 0.5 = 50%).
+    """
+    max_bonus = effect.params.get("max_bonus", 0.50)
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        unit.self_missing_hp_damage_bonus = max_bonus
+        count += 1
+    
+    return count
+
+
+def apply_ability_applies_debuff(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Disruptor: Abilities apply a debuff to targets.
+    """
+    debuff = effect.params.get("debuff", "dazzle")
+    debuff_value = effect.value  # e.g. 0.20 = 20% damage reduction
+    duration = effect.params.get("duration", 90)
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        unit.ability_applies_debuff = {
+            "type": debuff,
+            "value": debuff_value,
+            "duration": duration
+        }
+        count += 1
+    
+    return count
+
+
+def apply_damage_vs_debuffed(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Disruptor: Bonus damage vs targets with specific debuff.
+    """
+    debuff = effect.params.get("debuff", "dazzle")
+    bonus = effect.params.get("bonus", 0.25)
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        if not hasattr(unit, 'damage_vs_debuff'):
+            unit.damage_vs_debuff = {}
+        unit.damage_vs_debuff[debuff] = bonus
+        count += 1
+    
+    return count
+
+
+def apply_shimmer_fused(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Zaun: Shimmer-Fused buff (durability + decaying AS).
+    """
+    durability = effect.params.get("durability", 0.10)
+    attack_speed = effect.params.get("attack_speed", 0.90)
+    decay_duration = effect.params.get("decay_duration", 120)
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        # Apply durability
+        unit.stats.base_durability += durability
+        # Apply AS (will decay)
+        unit.stats.base_attack_speed += attack_speed
+        # Mark for decay
+        unit.shimmer_fused = {
+            "as_bonus": attack_speed,
+            "decay_duration": decay_duration,
+            "decay_per_tick": attack_speed / decay_duration
+        }
+        count += 1
+    
+    return count
+
+
+def apply_on_attack_counter(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Gunslinger: Every Nth attack deals bonus damage.
+    """
+    count_threshold = effect.params.get("count", 4)
+    bonus_damage = effect.params.get("bonus_damage", 100)
+    damage_type = effect.params.get("damage_type", "physical")
+    result = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        unit.attack_counter_bonus = {
+            "count": count_threshold,
+            "damage": bonus_damage,
+            "type": damage_type
+        }
+        result += 1
+    
+    return result
+
+
 # Registry efektów traitów
 TRAIT_EFFECT_APPLICATORS = {
     "stat_bonus": apply_stat_bonus,
@@ -175,6 +388,18 @@ TRAIT_EFFECT_APPLICATORS = {
     "damage_reduction": apply_damage_reduction,
     "heal": apply_heal,
     "mana": apply_mana,
+    # New Set 16 applicators
+    "stat_percent": apply_stat_percent,
+    "shield_percent_hp": apply_shield_percent_hp,
+    "mana_regen": apply_mana_regen,
+    "mana_generation_bonus": apply_mana_generation_bonus,
+    "target_missing_hp_as": apply_target_missing_hp_as,
+    "distance_damage_bonus": apply_distance_damage_bonus,
+    "self_missing_hp_damage": apply_self_missing_hp_damage,
+    "ability_applies_debuff": apply_ability_applies_debuff,
+    "damage_vs_debuffed": apply_damage_vs_debuffed,
+    "shimmer_fused": apply_shimmer_fused,
+    "on_attack_counter": apply_on_attack_counter,
 }
 
 

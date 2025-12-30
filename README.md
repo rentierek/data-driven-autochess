@@ -28,29 +28,20 @@ Data-driven symulator walk auto-battler w stylu Teamfight Tactics. Headless engi
 | **Mana** | ✅ | TFT formula (1%+3%, cap 42.5), Overflow |
 | **Abilities** | ✅ | 42 effect types, star scaling, stat scaling |
 | **Projectiles** | ✅ | Homing, miss-on-death, travel time |
-| **AoE** | ✅ | Circle, Cone, Line calculations |
-| **Debuffs** | ✅ | Burn, Wound, Slow, Silence, Disarm |
-| **Events** | ✅ | JSON logging for replay |
-| **Champion Classes** | ✅ | 7 klas z modyfikatorami many |
-| **Targeting** | ✅ | 11+ selektorów (nearest, backline, cluster...) |
-| **Traits** | ✅ | Synergy system, unique unit counting, triggers |
-| **Items** | ✅ | Percent stats, ability crit, omnivamp, conditionals |
 
----
+# TFT Auto-Battler Simulator - Set 16
 
-## 🏆 Set 16 Champion Implementation
+A comprehensive, data-driven simulator for TFT (Teamfight Tactics) auto-battler mechanics. Headless engine z pełnym systemem umiejętności, traitów, przedmiotów i projektili.
 
-### Progress
+## Current Implementation Status
 
-| Cost | Champions | Abilities | Status |
-|------|-----------|-----------|--------|
-| **1-Cost** | 14 | 14/14 | ✅ Complete |
-| **2-Cost** | 19 | 19/19 | ✅ Complete |
-| **3-Cost** | 18 | 18/18 | ✅ Complete |
-| **4-Cost** | - | 0/? | ⏳ Pending |
-| **5-Cost** | - | 0/? | ⏳ Pending |
-
-**Total: 51 abilities implemented and tested**
+| Feature | Status | Details |
+|---------|--------|---------|
+| **Effect Types** | 55 | Full modular system |
+| **Abilities** | 101 | All 1-5 cost champions |
+| **Champions** | 60+ | Set 16 roster |
+| **Traits** | 51 | Fully implemented |
+| **Items** | 40+ | AD/AP/Tank items |
 
 ### 1-Cost Champions (14)
 

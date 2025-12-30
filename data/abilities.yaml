@@ -1857,18 +1857,15 @@ abilities:
     effects:
       - type: dash
         target_type: "nearest"
-      - type: create_zone
+      - type: invulnerability_zone
         radius: 2
         duration: 75
-        on_tick_effects:
-          - type: damage
-            target_type: "nearest_enemy"
-            ad_value: [25, 38, 999]
-            damage_type: "physical"
-      - type: buff
-        stat: "attack_speed"
-        value: 1.0
-        duration: 75
+        caster_as_bonus: 1.0
+        heal_percent_damage: 0.08
+      - type: damage
+        target_type: "nearest_enemy"
+        ad_value: [25, 38, 999]
+        damage_type: "physical"
 
   # ═══════════════════════════════════════════════════════════════════════════
   # AZIR - Arise!
@@ -2064,10 +2061,28 @@ abilities:
     cast_time: [10, 8, 5]
     target_type: "cluster"
     effects:
-      - type: damage
+      - type: stardust
         radius: 2
         ap_value: [400, 600, 5000]
-        damage_type: "magical"
+        stardust_per_cast: 3
+        stardust_per_kill: 5
+        stardust_upgrades:
+          - threshold: 15
+            effect: { damage_amp: 0.12 }
+          - threshold: 60
+            effect: { damage_amp: 0.12 }
+          - threshold: 100
+            effect: { radius_bonus: 2 }
+          - threshold: 175
+            effect: { knockup_duration: 60 }
+          - threshold: 250
+            effect: { radius_bonus: 4 }
+          - threshold: 400
+            effect: { true_damage_percent: 0.25 }
+          - threshold: 600
+            effect: { damage_amp: 0.50 }
+          - threshold: 1199
+            effect: { instant_kill: true }
 
   # ═══════════════════════════════════════════════════════════════════════════
   # BARON NASHOR - Wrath of the Void
@@ -2134,13 +2149,9 @@ abilities:
     cast_time: [5, 4, 3]
     target_type: "nearest"
     effects:
-      - type: damage
+      - type: trait_effects
         ap_value: [300, 450, 1500]
-        damage_type: "magical"
-      - type: damage
-        target_count: 2
-        ap_value: [150, 225, 750]
-        damage_type: "magical"
+        split_targets: 2
 
   # ═══════════════════════════════════════════════════════════════════════════
   # AATROX - The Darkin Blade
@@ -2188,14 +2199,13 @@ abilities:
     cast_time: [4, 3, 2]
     target_type: "current_target"
     effects:
-      - type: damage
+      - type: transform_after_casts
         ad_value: [100, 150, 2000]
         percent_hp: 0.03
-        damage_type: "physical"
-      - type: buff
-        stat: "attack_speed"
-        value: 0.50
-        duration: 300
+        transform_at: 5
+        transform_damage_mult: 2.0
+        transform_hp_bonus: 0.20
+        transform_as_bonus: 0.50
 
   # ═══════════════════════════════════════════════════════════════════════════
   # XERATH - Eye of the Ascendant
@@ -2237,11 +2247,13 @@ abilities:
     effects:
       - type: dash
         target_type: "current_target"
-      - type: damage
-        radius: 1
+      - type: escalating_ability
         ad_value: [70, 105, 1500]
         ap_value: [20, 30, 200]
-        damage_type: "physical"
+        escalation_threshold: 25
+        execute_on_escalation: true
+        escalation_aoe_radius: 2
+        escalation_aoe_damage: [200, 300, 2000]
 
   # ═══════════════════════════════════════════════════════════════════════════
   # THRESH - The Box

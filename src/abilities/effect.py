@@ -3483,6 +3483,397 @@ EFFECT_REGISTRY["teleport"] = TeleportEffect
 EFFECT_REGISTRY["grab_and_slam"] = GrabAndSlamEffect
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# MAJOR 5-COST EFFECTS - Kindred, Aurelion Sol, Ryze
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class InvulnerabilityZoneEffect(Effect):
+    """
+    Kindred - Creates zone where allies cannot die (HP drops to 1 instead).
+    Doubles caster's AS inside zone. Deals damage to nearby enemy.
+    Heals allies on zone end based on damage dealt.
+    """
+    effect_type: str = "invulnerability_zone"
+    target_filter: EffectTarget = EffectTarget.ALLY
+    
+    radius: int = 2
+    duration: int = 75  # 2.5s
+    caster_as_bonus: float = 1.0  # double AS
+    on_tick_damage: StarValue = 0
+    heal_percent_damage: float = 0.08
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Create invulnerability zone
+        zone = {
+            'caster': caster,
+            'center': caster.position,
+            'radius': self.radius,
+            'end_tick': simulation.current_tick + self.duration,
+            'star_level': star_level,
+            'damage_dealt': 0,
+            'heal_percent': self.heal_percent_damage,
+            'invulnerable': True  # Key flag
+        }
+        
+        if not hasattr(simulation, 'invulnerability_zones'):
+            simulation.invulnerability_zones = []
+        simulation.invulnerability_zones.append(zone)
+        
+        # Buff caster AS
+        caster.stats.attack_speed *= (1 + self.caster_as_bonus)
+        
+        return EffectResult(
+            effect_type="invulnerability_zone",
+            success=True,
+            value=0,
+            details={"radius": self.radius, "duration": self.duration}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "InvulnerabilityZoneEffect":
+        return cls(
+            radius=data.get("radius", 2),
+            duration=data.get("duration", 75),
+            caster_as_bonus=data.get("caster_as_bonus", 1.0),
+            on_tick_damage=data.get("on_tick_damage", 0),
+            heal_percent_damage=data.get("heal_percent_damage", 0.08)
+        )
+
+
+@dataclass
+class StardustEffect(Effect):
+    """
+    Aurelion Sol - Permanent stacks that unlock upgrades at thresholds.
+    Gains stardust on ability cast and enemy deaths.
+    """
+    effect_type: str = "stardust"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    base_damage: StarValue = 0
+    radius: int = 2
+    stardust_per_cast: int = 1
+    stardust_per_kill: int = 3
+    
+    # Upgrade thresholds and effects
+    upgrades: Dict[int, Dict] = None
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Track stardust
+        if not hasattr(caster, 'stardust'):
+            caster.stardust = 0
+        
+        caster.stardust += self.stardust_per_cast
+        
+        # Calculate base damage
+        base_dmg = get_star_value(self.base_damage, star_level)
+        base_dmg *= (1 + caster.stats.ability_power / 100)
+        
+        # Apply upgrades based on stardust level
+        bonus_dmg = 0
+        current_radius = self.radius
+        knockup_duration = 0
+        true_damage_percent = 0
+        
+        if self.upgrades:
+            for threshold, upgrade in sorted(self.upgrades.items()):
+                if caster.stardust >= threshold:
+                    if upgrade.get("damage_amp"):
+                        bonus_dmg += base_dmg * upgrade["damage_amp"]
+                    if upgrade.get("radius_bonus"):
+                        current_radius += upgrade["radius_bonus"]
+                    if upgrade.get("knockup_duration"):
+                        knockup_duration = upgrade["knockup_duration"]
+                    if upgrade.get("true_damage_percent"):
+                        true_damage_percent = upgrade["true_damage_percent"]
+                    if upgrade.get("instant_kill") and caster.stardust >= 1199:
+                        target.stats.current_hp = 0
+                        return EffectResult(effect_type="stardust", success=True, value=target.stats.max_hp)
+        
+        total_dmg = base_dmg + bonus_dmg
+        
+        # Apply damage
+        actual = target.take_damage(total_dmg, DamageType.MAGICAL, caster)
+        
+        # True damage bonus
+        if true_damage_percent > 0:
+            true_dmg = base_dmg * true_damage_percent
+            target.take_damage(true_dmg, DamageType.TRUE, caster)
+        
+        # Track kills for stardust
+        if target.stats.current_hp <= 0:
+            caster.stardust += self.stardust_per_kill
+        
+        return EffectResult(
+            effect_type="stardust",
+            success=True,
+            value=actual,
+            details={"stardust": caster.stardust, "radius": current_radius}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StardustEffect":
+        upgrades = {}
+        for threshold_data in data.get("stardust_upgrades", []):
+            threshold = threshold_data.get("threshold", 0)
+            upgrades[threshold] = threshold_data.get("effect", {})
+        
+        return cls(
+            base_damage=data.get("ap_value", data.get("base_damage", 0)),
+            radius=data.get("radius", 2),
+            stardust_per_cast=data.get("stardust_per_cast", 1),
+            stardust_per_kill=data.get("stardust_per_kill", 3),
+            upgrades=upgrades if upgrades else None
+        )
+
+
+@dataclass
+class TraitEffectsEffect(Effect):
+    """
+    Ryze - Effects stack based on active traits on the board.
+    Checks each ally's traits and applies corresponding region effects.
+    """
+    effect_type: str = "trait_effects"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    base_damage: StarValue = 0
+    split_targets: int = 2
+    
+    # Region effects
+    demacia_execute: bool = True
+    freljord_true_damage: bool = True
+    noxus_pierce: bool = True
+    piltover_overcharge: bool = True
+    shadow_isles_souls: bool = True
+    shurima_knockup: bool = True
+    targon_heal: bool = True
+    zaun_poison: bool = True
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Get active traits from board
+        active_traits = set()
+        for unit in simulation.get_allies(caster.team):
+            if hasattr(unit, 'traits'):
+                for trait in unit.traits:
+                    active_traits.add(trait.lower())
+        
+        # Base damage
+        base_dmg = get_star_value(self.base_damage, star_level)
+        base_dmg *= (1 + caster.stats.ability_power / 100)
+        
+        total_dmg = base_dmg
+        extra_effects = []
+        
+        # Apply trait effects
+        if 'demacia' in active_traits and self.demacia_execute:
+            # Execute scaling with armor/mr
+            if target.stats.current_hp / target.stats.max_hp < 0.20:
+                target.stats.current_hp = 0
+                extra_effects.append("demacia_execute")
+        
+        if 'freljord' in active_traits and self.freljord_true_damage:
+            # True damage + chill
+            true_dmg = target.stats.max_hp * 0.05
+            target.take_damage(true_dmg, DamageType.TRUE, caster)
+            if hasattr(target, 'debuffs'):
+                target.debuffs['chill'] = {'value': 0.30, 'end_tick': simulation.current_tick + 90}
+            extra_effects.append("freljord_true")
+        
+        if 'noxus' in active_traits and self.noxus_pierce:
+            # Pierce (reduced DR on this hit)
+            total_dmg *= 1.3
+            extra_effects.append("noxus_pierce")
+        
+        if 'piltover' in active_traits and self.piltover_overcharge:
+            # Every 3rd cast bonus
+            if not hasattr(caster, 'overcharge_count'):
+                caster.overcharge_count = 0
+            caster.overcharge_count += 1
+            if caster.overcharge_count >= 3:
+                total_dmg *= 1.5
+                caster.overcharge_count = 0
+                extra_effects.append("piltover_overcharge")
+        
+        if 'shadow_isles' in active_traits and self.shadow_isles_souls:
+            # Bonus damage per soul
+            souls = getattr(caster, 'souls', 0)
+            total_dmg += souls * 10
+            extra_effects.append(f"shadow_isles_{souls}")
+        
+        if 'shurima' in active_traits and self.shurima_knockup:
+            # Knockup
+            if hasattr(target, 'cc_end_tick'):
+                target.cc_end_tick = max(target.cc_end_tick if target.cc_end_tick else 0, simulation.current_tick + 30)
+            extra_effects.append("shurima_knockup")
+        
+        if 'targon' in active_traits and self.targon_heal:
+            # Heal lowest HP ally
+            allies = simulation.get_allies(caster.team)
+            if allies:
+                lowest = min(allies, key=lambda u: u.stats.current_hp / u.stats.max_hp)
+                heal_amt = base_dmg * 0.20
+                lowest.stats.current_hp = min(lowest.stats.max_hp, lowest.stats.current_hp + heal_amt)
+            extra_effects.append("targon_heal")
+        
+        if 'zaun' in active_traits and self.zaun_poison:
+            # Poison ticks
+            if not hasattr(target, 'poison'):
+                target.poison = {}
+            target.poison = {
+                'damage': 20 * (1 + caster.stats.ability_power / 100),
+                'ticks': 5,
+                'tick_rate': 30
+            }
+            extra_effects.append("zaun_poison")
+        
+        # Apply damage
+        actual = target.take_damage(total_dmg, DamageType.MAGICAL, caster)
+        
+        return EffectResult(
+            effect_type="trait_effects",
+            success=True,
+            value=actual,
+            details={"active_traits": list(active_traits), "effects_applied": extra_effects}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TraitEffectsEffect":
+        return cls(
+            base_damage=data.get("ap_value", data.get("base_damage", 0)),
+            split_targets=data.get("split_targets", 2)
+        )
+
+
+@dataclass
+class TransformAfterCastsEffect(Effect):
+    """
+    Volibear - Transform after N ability casts.
+    """
+    effect_type: str = "transform_after_casts"
+    target_filter: EffectTarget = EffectTarget.SELF
+    
+    base_damage: StarValue = 0
+    percent_hp: float = 0.03
+    transform_at: int = 5
+    transform_damage_mult: float = 2.0
+    transform_hp_bonus: float = 0.20
+    transform_as_bonus: float = 0.50
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Track cast count
+        if not hasattr(caster, 'ability_cast_count'):
+            caster.ability_cast_count = 0
+        caster.ability_cast_count += 1
+        
+        # Calculate damage
+        base_dmg = get_star_value(self.base_damage, star_level)
+        hp_dmg = target.stats.max_hp * self.percent_hp
+        total_dmg = base_dmg + hp_dmg
+        
+        # Check for transform
+        transformed = getattr(caster, 'transformed', False)
+        
+        if caster.ability_cast_count >= self.transform_at and not transformed:
+            # Transform!
+            caster.transformed = True
+            caster.stats.max_hp *= (1 + self.transform_hp_bonus)
+            caster.stats.current_hp *= (1 + self.transform_hp_bonus)
+            caster.stats.attack_speed *= (1 + self.transform_as_bonus)
+            total_dmg *= self.transform_damage_mult
+        elif transformed:
+            total_dmg *= self.transform_damage_mult
+        
+        actual = target.take_damage(total_dmg, DamageType.PHYSICAL, caster)
+        
+        return EffectResult(
+            effect_type="transform_after_casts",
+            success=True,
+            value=actual,
+            details={"cast_count": caster.ability_cast_count, "transformed": transformed}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TransformAfterCastsEffect":
+        return cls(
+            base_damage=data.get("ad_value", 0),
+            percent_hp=data.get("percent_hp", 0.03),
+            transform_at=data.get("transform_at", 5),
+            transform_damage_mult=data.get("transform_damage_mult", 2.0),
+            transform_hp_bonus=data.get("transform_hp_bonus", 0.20),
+            transform_as_bonus=data.get("transform_as_bonus", 0.50)
+        )
+
+
+@dataclass
+class EscalatingAbilityEffect(Effect):
+    """
+    Zaahen - Ability that powers up after N uses, eventually executing.
+    """
+    effect_type: str = "escalating_ability"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    ad_value: StarValue = 0
+    ap_value: StarValue = 0
+    escalation_threshold: int = 25
+    execute_on_escalation: bool = True
+    escalation_aoe_radius: int = 2
+    escalation_aoe_damage: StarValue = 0
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Track uses
+        if not hasattr(caster, 'escalation_count'):
+            caster.escalation_count = 0
+        caster.escalation_count += 1
+        
+        # Calculate damage
+        ad_dmg = get_star_value(self.ad_value, star_level)
+        ap_dmg = get_star_value(self.ap_value, star_level)
+        total_dmg = ad_dmg + ap_dmg * (1 + caster.stats.ability_power / 100)
+        
+        # Check escalation
+        if caster.escalation_count >= self.escalation_threshold:
+            if self.execute_on_escalation:
+                target.stats.current_hp = 0
+            
+            # AoE damage
+            aoe_dmg = get_star_value(self.escalation_aoe_damage, star_level)
+            if aoe_dmg > 0:
+                for enemy in simulation.get_enemies(caster.team):
+                    if enemy.id != target.id:
+                        enemy.take_damage(aoe_dmg, DamageType.PHYSICAL, caster)
+            
+            caster.escalation_count = 0
+            return EffectResult(effect_type="escalating_ability", success=True, value=target.stats.max_hp, details={"escalated": True})
+        
+        actual = target.take_damage(total_dmg, DamageType.PHYSICAL, caster)
+        
+        return EffectResult(
+            effect_type="escalating_ability",
+            success=True,
+            value=actual,
+            details={"escalation_count": caster.escalation_count}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "EscalatingAbilityEffect":
+        return cls(
+            ad_value=data.get("ad_value", 0),
+            ap_value=data.get("ap_value", 0),
+            escalation_threshold=data.get("escalation_threshold", 25),
+            execute_on_escalation=data.get("execute_on_escalation", True),
+            escalation_aoe_radius=data.get("escalation_aoe_radius", 2),
+            escalation_aoe_damage=data.get("escalation_aoe_damage", 0)
+        )
+
+
+# Register new effects
+EFFECT_REGISTRY["invulnerability_zone"] = InvulnerabilityZoneEffect
+EFFECT_REGISTRY["stardust"] = StardustEffect
+EFFECT_REGISTRY["trait_effects"] = TraitEffectsEffect
+EFFECT_REGISTRY["transform_after_casts"] = TransformAfterCastsEffect
+EFFECT_REGISTRY["escalating_ability"] = EscalatingAbilityEffect
+
+
 def create_effect(effect_type: str, data: Dict[str, Any]) -> Effect:
     """
     Factory do tworzenia efektów z YAML.

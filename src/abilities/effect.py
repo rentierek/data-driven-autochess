@@ -295,7 +295,7 @@ class DamageEffect(Effect):
                     is_crit = self._check_condition(caster, t, self.crit_condition, simulation)
                 
                 final_dmg = current_dmg * (caster.stats.get_crit_damage() if is_crit else 1.0)
-                actual = t.take_damage(final_dmg, self.damage_type, caster, simulation)
+                actual = t.take_damage(final_dmg, self.damage_type, caster)
                 results_value += actual
             
             hit_ids.append(t.id)
@@ -3052,80 +3052,107 @@ class TransformEffect(Effect):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# ACCUMULATOR EFFECT - Seraphine notes system
+# ACCUMULATOR EFFECT - Generic stacking system
 # ═══════════════════════════════════════════════════════════════════════════
 
 @dataclass
 class AccumulatorEffect(Effect):
     """
-    Akumuluje ładunki (nuty) i triggeruje efekty przy progu.
-    Seraphine: 3 nuty/cast, każda zadaje dmg, przy 12 nutach fala leczenia+dmg.
+    Akumuluje ładunki i triggeruje efekty przy progu.
+    Modularny - można użyć dla różnych mechanik (nuty, ładunki, fale itp.)
+    
+    Przykłady użycia:
+    - Seraphine: stacks_per_cast=3 (nuty), trigger_at=12
+    - Miss Fortune: stacks_per_cast=1 (fale), trigger_at=3
     """
     effect_type: str = "accumulator"
     target_filter: EffectTarget = EffectTarget.ENEMY
     
-    notes_per_cast: int = 3
-    note_damage: StarValue = 0.0
-    scaling: str = "ap"
-    trigger_at: int = 12
+    # Generic stack fields (not notes-specific)
+    stacks_per_cast: int = 3
+    stack_name: str = "stacks"  # for logging: "notes", "waves", "charges"
     
-    # On trigger effects (simplified - just heal + damage)
+    # Per-stack effect
+    stack_damage: StarValue = 0.0
+    stack_damage_type: str = "magical"
+    scaling: str = "ap"
+    
+    # Trigger threshold
+    trigger_at: int = 12
+    consume_on_trigger: bool = True  # reset to 0 or keep accumulating
+    
+    # On trigger effects
     trigger_heal: StarValue = 0.0
     trigger_damage: StarValue = 0.0
     trigger_falloff: float = 0.30
+    trigger_bonus_effect: str = ""  # "shield", "stun", etc.
+    trigger_bonus_value: StarValue = 0.0
     
     def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
-        # Init accumulator
-        if not hasattr(caster, 'accumulator_notes'):
-            caster.accumulator_notes = 0
+        # Init accumulator with stack_name for flexibility
+        attr_name = f'accumulator_{self.stack_name}'
+        if not hasattr(caster, attr_name):
+            setattr(caster, attr_name, 0)
         
-        # Deal note damage for each note
-        note_dmg = get_star_value(self.note_damage, star_level)
+        current_stacks = getattr(caster, attr_name)
+        
+        # Apply stack damage for each stack
+        stack_dmg = get_star_value(self.stack_damage, star_level)
         if self.scaling == "ap":
-            note_dmg *= (1 + caster.stats.ability_power / 100)
+            stack_dmg *= (1 + caster.stats.ability_power / 100)
+        elif self.scaling == "ad":
+            stack_dmg *= (1 + caster.stats.attack_damage / 100)
         
         total_dmg = 0
         enemies = simulation.get_enemies(caster.team)
         
-        for i in range(self.notes_per_cast):
-            if enemies:
+        dmg_type = DamageType.MAGICAL if self.stack_damage_type == "magical" else DamageType.PHYSICAL
+        
+        for i in range(self.stacks_per_cast):
+            if enemies and stack_dmg > 0:
                 enemy = enemies[i % len(enemies)]
-                actual = enemy.take_damage(note_dmg, DamageType.MAGICAL, caster)
+                actual = enemy.take_damage(stack_dmg, dmg_type, caster)
                 total_dmg += actual
         
-        caster.accumulator_notes += self.notes_per_cast
+        current_stacks += self.stacks_per_cast
+        setattr(caster, attr_name, current_stacks)
         
         # Check trigger
         triggered = False
-        if caster.accumulator_notes >= self.trigger_at:
+        if current_stacks >= self.trigger_at:
             triggered = True
-            caster.accumulator_notes = 0
+            
+            if self.consume_on_trigger:
+                setattr(caster, attr_name, 0)
             
             # Heal allies
             heal_val = get_star_value(self.trigger_heal, star_level)
             if self.scaling == "ap":
                 heal_val *= (1 + caster.stats.ability_power / 100)
             
-            allies = simulation.get_allies(caster.team)
-            for ally in allies:
-                ally.heal(heal_val, caster)
+            if heal_val > 0:
+                allies = simulation.get_allies(caster.team)
+                for ally in allies:
+                    ally.heal(heal_val, caster)
             
-            # Damage in line with falloff
+            # Damage with falloff
             dmg_val = get_star_value(self.trigger_damage, star_level)
             if self.scaling == "ap":
                 dmg_val *= (1 + caster.stats.ability_power / 100)
             
-            for i, enemy in enumerate(enemies):
-                falloff_mult = max(0.1, 1 - (self.trigger_falloff * i))
-                actual_dmg = dmg_val * falloff_mult
-                enemy.take_damage(actual_dmg, DamageType.MAGICAL, caster)
+            if dmg_val > 0:
+                for i, enemy in enumerate(enemies):
+                    falloff_mult = max(0.1, 1 - (self.trigger_falloff * i))
+                    actual_dmg = dmg_val * falloff_mult
+                    enemy.take_damage(actual_dmg, DamageType.MAGICAL, caster)
         
         return EffectResult(
             effect_type="accumulator",
             success=True,
             value=float(total_dmg),
             details={
-                "notes": caster.accumulator_notes if hasattr(caster, 'accumulator_notes') else 0,
+                "stack_name": self.stack_name,
+                "current_stacks": getattr(caster, attr_name),
                 "triggered": triggered
             }
         )
@@ -3146,10 +3173,13 @@ class AccumulatorEffect(Effect):
                 trigger_falloff = effect.get("falloff_percent", 0.30)
         
         return cls(
-            notes_per_cast=data.get("notes_per_cast", 3),
-            note_damage=data.get("note_damage", 0),
+            stacks_per_cast=data.get("stacks_per_cast", data.get("notes_per_cast", 3)),
+            stack_name=data.get("stack_name", "notes"),
+            stack_damage=data.get("stack_damage", data.get("note_damage", 0)),
+            stack_damage_type=data.get("stack_damage_type", "magical"),
             scaling=data.get("scaling", "ap"),
             trigger_at=data.get("trigger_at", 12),
+            consume_on_trigger=data.get("consume_on_trigger", True),
             trigger_heal=trigger_heal,
             trigger_damage=trigger_damage,
             trigger_falloff=trigger_falloff
@@ -3165,6 +3195,292 @@ EFFECT_REGISTRY["heal_over_time"] = HealOverTimeEffect
 # Add 4-cost effects to registry
 EFFECT_REGISTRY["transform"] = TransformEffect
 EFFECT_REGISTRY["accumulator"] = AccumulatorEffect
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 5-COST EFFECT TYPES
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class RandomAbilityEffect(Effect):
+    """
+    Sylas - randomly selects and casts one of multiple abilities.
+    """
+    effect_type: str = "random_ability"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    abilities: Dict[str, Dict] = None  # name -> ability config
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        import random
+        
+        if not self.abilities:
+            return EffectResult(effect_type="random_ability", success=False)
+        
+        # Select random ability
+        ability_name = random.choice(list(self.abilities.keys()))
+        ability_config = self.abilities[ability_name]
+        
+        effects = ability_config.get("effects", [])
+        total_value = 0
+        
+        for effect_data in effects:
+            effect = create_effect(effect_data["type"], effect_data)
+            result = effect.apply(caster, target, star_level, simulation)
+            if result.value:
+                total_value += result.value
+        
+        return EffectResult(
+            effect_type="random_ability",
+            success=True,
+            value=total_value,
+            details={"selected_ability": ability_name}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RandomAbilityEffect":
+        return cls(abilities=data.get("abilities", {}))
+
+
+@dataclass
+class SuppressEffect(Effect):
+    """
+    Tahm Kench - removes target from combat temporarily, deals damage over time.
+    If caster dies, target is released. If target dies, drops loot.
+    """
+    effect_type: str = "suppress"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    duration: int = 75  # 2.5s
+    damage: StarValue = 0
+    scaling: str = "ap"
+    damage_type: str = "magical"
+    on_caster_death: str = "release"
+    on_target_death: str = "drop_loot"
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Calculate damage
+        dmg = get_star_value(self.damage, star_level)
+        if self.scaling == "ap":
+            dmg *= (1 + caster.stats.ability_power / 100)
+        
+        # Mark target as suppressed
+        if not hasattr(target, 'suppressed'):
+            target.suppressed = {}
+        
+        target.suppressed = {
+            'by': caster.id,
+            'end_tick': simulation.current_tick + self.duration,
+            'damage_per_tick': dmg / (self.duration / 30),
+            'on_caster_death': self.on_caster_death,
+            'on_death': self.on_target_death
+        }
+        
+        # Apply damage immediately
+        dmg_type = DamageType.MAGICAL if self.damage_type == "magical" else DamageType.PHYSICAL
+        actual = target.take_damage(dmg, dmg_type, caster)
+        
+        return EffectResult(
+            effect_type="suppress",
+            success=True,
+            value=actual,
+            details={"duration": self.duration}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SuppressEffect":
+        return cls(
+            duration=data.get("duration", 75),
+            damage=data.get("damage", 0),
+            scaling=data.get("scaling", "ap"),
+            damage_type=data.get("damage_type", "magical"),
+            on_caster_death=data.get("on_caster_death", "release"),
+            on_target_death=data.get("on_target_death", "drop_loot")
+        )
+
+
+@dataclass
+class CycleAbilityEffect(Effect):
+    """
+    Aatrox - cycles through different attack patterns (line -> cone -> circle).
+    """
+    effect_type: str = "cycle_ability"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    cycle_count: int = 3
+    stages: Dict[int, Dict] = None  # 1, 2, 3 -> stage config
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Track current cycle stage
+        if not hasattr(caster, 'cycle_stage'):
+            caster.cycle_stage = 1
+        
+        current_stage = caster.cycle_stage
+        stage_config = self.stages.get(current_stage, self.stages.get(1, {}))
+        
+        # Get damage values
+        ad_value = get_star_value(stage_config.get("ad_value", 0), star_level)
+        ap_value = get_star_value(stage_config.get("ap_value", 0), star_level)
+        total_dmg = ad_value + ap_value
+        
+        # Apply damage
+        dmg_type = DamageType.PHYSICAL if stage_config.get("damage_type", "physical") == "physical" else DamageType.MAGICAL
+        actual = target.take_damage(total_dmg, dmg_type, caster)
+        
+        # Apply on-hit effects
+        on_hit = stage_config.get("on_hit", [])
+        for effect_data in on_hit:
+            if effect_data.get("type") == "execute" and target.stats.current_hp / target.stats.max_hp <= effect_data.get("threshold", 0.15):
+                target.stats.current_hp = 0
+            elif effect_data.get("type") == "sunder":
+                if not hasattr(target, 'sunder_stacks'):
+                    target.sunder_stacks = 0
+                target.sunder_stacks += effect_data.get("value", 10)
+            elif effect_data.get("type") == "knockup":
+                if not hasattr(target, 'cc_end_tick'):
+                    target.cc_end_tick = 0
+                target.cc_end_tick = max(target.cc_end_tick, simulation.current_tick + effect_data.get("duration", 30))
+        
+        # Advance cycle
+        caster.cycle_stage = (caster.cycle_stage % self.cycle_count) + 1
+        
+        return EffectResult(
+            effect_type="cycle_ability",
+            success=True,
+            value=actual,
+            details={"stage": current_stage, "next_stage": caster.cycle_stage}
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CycleAbilityEffect":
+        stages = {}
+        for key, value in data.get("stages", {}).items():
+            stages[int(key)] = value
+        return cls(
+            cycle_count=data.get("cycle_count", 3),
+            stages=stages
+        )
+
+
+@dataclass
+class ChannelEffect(Effect):
+    """
+    Fiddlesticks, T-Hex - channel that drains mana and applies effects each tick.
+    """
+    effect_type: str = "channel"
+    target_filter: EffectTarget = EffectTarget.SELF
+    
+    mana_drain_per_tick: int = 20
+    tick_rate: int = 30
+    on_tick_effects: List[Dict] = None
+    bonus_to_nearest: float = 0.0
+    nearest_count: int = 2
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Set up channel
+        if not hasattr(caster, 'channel'):
+            caster.channel = {}
+        
+        caster.channel = {
+            'mana_drain': self.mana_drain_per_tick,
+            'tick_rate': self.tick_rate,
+            'next_tick': simulation.current_tick + self.tick_rate,
+            'on_tick': self.on_tick_effects or [],
+            'star_level': star_level,
+            'bonus_nearest': self.bonus_to_nearest,
+            'nearest_count': self.nearest_count
+        }
+        
+        return EffectResult(effect_type="channel", success=True, value=0)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ChannelEffect":
+        return cls(
+            mana_drain_per_tick=data.get("mana_drain_per_tick", 20),
+            tick_rate=data.get("tick_rate", 30),
+            on_tick_effects=data.get("on_tick", []),
+            bonus_to_nearest=data.get("bonus_to_nearest_2", 0.0),
+            nearest_count=data.get("nearest_count", 2)
+        )
+
+
+@dataclass  
+class TeleportEffect(Effect):
+    """
+    Fiddlesticks - teleport to target location (cluster of enemies).
+    """
+    effect_type: str = "teleport"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    target_type: str = "cluster"
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Move caster to target position
+        if target and hasattr(target, 'position'):
+            caster.position = target.position
+            
+        return EffectResult(effect_type="teleport", success=True, value=0)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TeleportEffect":
+        return cls(target_type=data.get("target_type", "cluster"))
+
+
+@dataclass
+class GrabAndSlamEffect(Effect):
+    """
+    Sett - grab target and slam, dealing % max HP damage.
+    """
+    effect_type: str = "grab_and_slam"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    ap_value: StarValue = 0
+    percent_hp: StarValue = 0.0
+    percent_hp_scaling: str = "ap"
+    splash_radius: int = 3
+    splash_percent: float = 0.50
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Calculate main damage
+        base_dmg = get_star_value(self.ap_value, star_level)
+        percent = get_star_value(self.percent_hp, star_level)
+        
+        if self.percent_hp_scaling == "ap":
+            percent *= (1 + caster.stats.ability_power / 100)
+        
+        hp_dmg = target.stats.max_hp * percent
+        total_dmg = base_dmg + hp_dmg
+        
+        # Apply to main target
+        actual = target.take_damage(total_dmg, DamageType.MAGICAL, caster)
+        
+        # Apply splash
+        splash_dmg = total_dmg * self.splash_percent
+        enemies = simulation.get_enemies(caster.team)
+        for enemy in enemies:
+            if enemy.id != target.id:
+                enemy.take_damage(splash_dmg, DamageType.MAGICAL, caster)
+        
+        return EffectResult(effect_type="grab_and_slam", success=True, value=actual)
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "GrabAndSlamEffect":
+        return cls(
+            ap_value=data.get("ap_value", 0),
+            percent_hp=data.get("percent_hp", 0),
+            percent_hp_scaling=data.get("percent_hp_scaling", "ap"),
+            splash_radius=data.get("splash_radius", 3),
+            splash_percent=data.get("splash_percent", 0.50)
+        )
+
+
+# Add 5-cost effects to registry
+EFFECT_REGISTRY["random_ability"] = RandomAbilityEffect
+EFFECT_REGISTRY["suppress"] = SuppressEffect
+EFFECT_REGISTRY["cycle_ability"] = CycleAbilityEffect
+EFFECT_REGISTRY["channel"] = ChannelEffect
+EFFECT_REGISTRY["teleport"] = TeleportEffect
+EFFECT_REGISTRY["grab_and_slam"] = GrabAndSlamEffect
 
 
 def create_effect(effect_type: str, data: Dict[str, Any]) -> Effect:

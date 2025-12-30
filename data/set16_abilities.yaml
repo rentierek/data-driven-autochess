@@ -1801,3 +1801,492 @@ abilities:
         ap_value: 0.30
         duration: 120
 
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 5-COST CHAMPION ABILITIES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ANNIE - Enraged Inferno
+  # ═══════════════════════════════════════════════════════════════════════════
+  enraged_inferno:
+    name: "Enraged Inferno"
+    mana_cost: 170
+    cast_time: [15, 12, 8]
+    target_type: "all_enemies"
+    effects:
+      - type: damage
+        target_type: "all_enemies"
+        ap_value: [1500, 2250, 8000]
+        damage_type: "magical"
+      - type: burn
+        percent: 0.01
+        duration: 1350
+      - type: wound
+        value: 0.50
+        duration: 1350
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ORNN - Call of the Forge
+  # ═══════════════════════════════════════════════════════════════════════════
+  call_of_the_forge:
+    name: "Call of the Forge"
+    mana_cost: 150
+    cast_time: [12, 10, 6]
+    target_type: "farthest"
+    effects:
+      - type: damage
+        target_type: "all_enemies"
+        ap_value: [100, 150, 3000]
+        damage_type: "magical"
+      - type: chill
+        value: 0.30
+        duration: 90
+      - type: damage
+        ap_value: [150, 225, 4500]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # KINDRED - Lamb's Respite
+  # ═══════════════════════════════════════════════════════════════════════════
+  lambs_respite:
+    name: "Lamb's Respite"
+    mana_cost: 200
+    cast_time: [15, 12, 8]
+    target_type: "self"
+    effects:
+      - type: dash
+        target_type: "nearest"
+      - type: create_zone
+        radius: 2
+        duration: 75
+        on_tick_effects:
+          - type: damage
+            target_type: "nearest_enemy"
+            ad_value: [25, 38, 999]
+            damage_type: "physical"
+      - type: buff
+        stat: "attack_speed"
+        value: 1.0
+        duration: 75
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # AZIR - Arise!
+  # ═══════════════════════════════════════════════════════════════════════════
+  arise:
+    name: "Arise!"
+    mana_cost: 40
+    cast_time: [4, 3, 2]
+    target_type: "self"
+    effects:
+      - type: damage
+        ap_value: [100, 150, 3000]
+        damage_type: "magical"
+      - type: damage
+        ap_value: [70, 105, 1500]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ZILEAN - Visions of the End
+  # ═══════════════════════════════════════════════════════════════════════════
+  visions_of_the_end:
+    name: "Visions of the End"
+    mana_cost: 40
+    cast_time: [5, 4, 3]
+    target_type: "nearest"
+    effects:
+      - type: dot
+        ap_value: [75, 115, 1000]
+        damage_type: "magical"
+        duration: 540
+        tick_rate: 30
+      - type: damage
+        radius: 1
+        ap_value: [150, 225, 4000]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # FIDDLESTICKS - Crowstorm
+  # ═══════════════════════════════════════════════════════════════════════════
+  crowstorm:
+    name: "Crowstorm"
+    mana_cost: 80
+    cast_time: [10, 8, 5]
+    target_type: "cluster"
+    effects:
+      - type: teleport
+        target_type: "cluster"
+      - type: stun
+        duration: [52, 52, 240]
+      - type: channel
+        mana_drain_per_tick: 20
+        tick_rate: 30
+        on_tick:
+          - type: damage
+            radius: 2
+            ap_value: [95, 140, 6666]
+            damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SHYVANA - Dragon's Descent
+  # ═══════════════════════════════════════════════════════════════════════════
+  dragons_descent:
+    name: "Dragon's Descent"
+    mana_cost: 40
+    cast_time: [8, 6, 4]
+    target_type: "self"
+    effects:
+      - type: transform
+        stat_changes:
+          hp_flat: [600, 1000, 9999]
+        duration: combat
+      - type: buff
+        stat: "damage_reduction"
+        value: [0.20, 0.20, 0.90]
+        duration: 300
+      - type: dash
+        target_type: "cluster"
+      - type: damage
+        radius: 3
+        ad_value: [100, 150, 3000]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GALIO - Inspirational Might
+  # ═══════════════════════════════════════════════════════════════════════════
+  inspirational_might:
+    name: "Inspirational Might"
+    mana_cost: 140
+    cast_time: [12, 10, 6]
+    target_type: "self"
+    effects:
+      - type: dash
+        target_type: "cluster"
+      - type: shield
+        target_type: "allies"
+        ap_value: [500, 600, 2000]
+        duration: 120
+      - type: damage
+        radius: 2
+        ap_value: [450, 675, 5000]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # TAHM KENCH - Devour
+  # ═══════════════════════════════════════════════════════════════════════════
+  devour:
+    name: "Devour"
+    mana_cost: 90
+    cast_time: [10, 8, 5]
+    target_type: "nearest"
+    effects:
+      - type: suppress
+        duration: 75
+        damage: [850, 1275, 30000]
+        scaling: "ap"
+        damage_type: "magical"
+        on_caster_death: "release"
+        on_target_death: "drop_loot"
+      - type: buff
+        stat: "damage_reduction"
+        value: 0.30
+        duration: 75
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SETT - The Show Stopper
+  # ═══════════════════════════════════════════════════════════════════════════
+  the_show_stopper:
+    name: "The Show Stopper"
+    mana_cost: 90
+    cast_time: [10, 8, 5]
+    target_type: "nearest"
+    effects:
+      - type: grab_and_slam
+        ap_value: [220, 330, 9999]
+        percent_hp: [0.08, 0.12, 0.09]
+        percent_hp_scaling: "ap"
+        splash_radius: 3
+        splash_percent: 0.50
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BROCK - Seismic Slam
+  # ═══════════════════════════════════════════════════════════════════════════
+  seismic_slam:
+    name: "Seismic Slam"
+    mana_cost: 100
+    cast_time: [12, 10, 6]
+    target_type: "all_enemies"
+    passive:
+      cc_immunity: true
+    effects:
+      - type: damage
+        target_type: "all_enemies"
+        ad_value: [150, 200, 1500]
+        percent_hp: 0.02
+        damage_type: "physical"
+      - type: knockback
+        duration: 52
+      - type: projectile_swarm
+        count: 12
+        ad_value: [250, 375, 600]
+        ap_value: [20, 30, 100]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # T-HEX - Hextech Arsenal
+  # ═══════════════════════════════════════════════════════════════════════════
+  hextech_arsenal:
+    name: "Hextech Arsenal"
+    mana_cost: 100
+    cast_time: [10, 8, 5]
+    target_type: "self"
+    effects:
+      - type: shield
+        hp_value: [300, 400, 6666]
+        percent_hp: 0.20
+        duration: 120
+      - type: channel
+        mana_drain_per_tick: 33
+        tick_rate: 30
+        on_tick:
+          - type: damage
+            target_type: "line"
+            ad_value: [135, 200, 2000]
+            ap_value: [10, 15, 150]
+            damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # AURELION SOL - The Skies Descend
+  # ═══════════════════════════════════════════════════════════════════════════
+  the_skies_descend:
+    name: "The Skies Descend"
+    mana_cost: 90
+    cast_time: [10, 8, 5]
+    target_type: "cluster"
+    effects:
+      - type: damage
+        radius: 2
+        ap_value: [400, 600, 5000]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BARON NASHOR - Wrath of the Void
+  # ═══════════════════════════════════════════════════════════════════════════
+  wrath_of_the_void:
+    name: "Wrath of the Void"
+    mana_cost: 50
+    cast_time: [8, 6, 4]
+    target_type: "self"
+    passive:
+      cc_immunity: true
+    effects:
+      - type: damage
+        radius: 2
+        ad_value: [250, 375, 20000]
+        ap_value: [30, 45, 500]
+        damage_type: "physical"
+      - type: multi_hit
+        count: 10
+        damage_percent: 0.50
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SYLAS - Stolen Might
+  # ═══════════════════════════════════════════════════════════════════════════
+  stolen_might:
+    name: "Stolen Might"
+    mana_cost: 30
+    cast_time: [5, 4, 3]
+    target_type: "nearest"
+    effects:
+      - type: random_ability
+        abilities:
+          cataclysm:
+            effects:
+              - type: dash
+                target_type: "nearest"
+              - type: damage
+                radius: 2
+                ap_value: [100, 180, 1000]
+                damage_type: "magical"
+              - type: stun
+                duration: [45, 52, 900]
+          demacian_justice:
+            effects:
+              - type: damage
+                ap_value: [670, 1000, 99999]
+                damage_type: "magical"
+          final_spark:
+            effects:
+              - type: shield
+                ap_value: [400, 450, 800]
+                duration: 37
+              - type: damage
+                target_type: "line"
+                ap_value: [300, 475, 1000]
+                damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # RYZE - Runic Overload
+  # ═══════════════════════════════════════════════════════════════════════════
+  runic_overload:
+    name: "Runic Overload"
+    mana_cost: 40
+    cast_time: [5, 4, 3]
+    target_type: "nearest"
+    effects:
+      - type: damage
+        ap_value: [300, 450, 1500]
+        damage_type: "magical"
+      - type: damage
+        target_count: 2
+        ap_value: [150, 225, 750]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # AATROX - The Darkin Blade
+  # ═══════════════════════════════════════════════════════════════════════════
+  the_darkin_blade:
+    name: "The Darkin Blade"
+    mana_cost: 30
+    cast_time: [5, 4, 3]
+    target_type: "current_target"
+    effects:
+      - type: cycle_ability
+        cycle_count: 3
+        stages:
+          1:
+            shape: "line"
+            ad_value: [150, 225, 2400]
+            ap_value: [20, 30, 100]
+            damage_type: "physical"
+            on_hit:
+              - type: sunder
+                value: 10
+          2:
+            shape: "cone"
+            ad_value: [150, 225, 2400]
+            ap_value: [20, 30, 100]
+            damage_type: "physical"
+            on_hit:
+              - type: knockup
+                duration: 30
+          3:
+            shape: "circle"
+            ad_value: [150, 225, 2400]
+            ap_value: [20, 30, 100]
+            damage_type: "physical"
+            on_hit:
+              - type: execute
+                threshold: 0.15
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # VOLIBEAR - The Relentless Storm
+  # ═══════════════════════════════════════════════════════════════════════════
+  the_relentless_storm:
+    name: "The Relentless Storm"
+    mana_cost: 20
+    cast_time: [4, 3, 2]
+    target_type: "current_target"
+    effects:
+      - type: damage
+        ad_value: [100, 150, 2000]
+        percent_hp: 0.03
+        damage_type: "physical"
+      - type: buff
+        stat: "attack_speed"
+        value: 0.50
+        duration: 300
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # XERATH - Eye of the Ascendant
+  # ═══════════════════════════════════════════════════════════════════════════
+  eye_of_the_ascendant:
+    name: "Eye of the Ascendant"
+    mana_cost: 135
+    cast_time: [12, 10, 6]
+    target_type: "nearest_4"
+    effects:
+      - type: projectile_swarm
+        count: [10, 10, 99]
+        target_count: 4
+        ap_value: [500, 750, 2500]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ZIGGS - Mega Inferno Bomb
+  # ═══════════════════════════════════════════════════════════════════════════
+  mega_inferno_bomb:
+    name: "Mega Inferno Bomb"
+    mana_cost: 160
+    cast_time: [12, 10, 6]
+    target_type: "cluster"
+    effects:
+      - type: damage
+        radius: 4
+        ap_value: [550, 825, 7000]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ZAAHEN - Divine Challenge
+  # ═══════════════════════════════════════════════════════════════════════════
+  divine_challenge:
+    name: "Divine Challenge"
+    mana_cost: 40
+    cast_time: [5, 4, 3]
+    target_type: "nearest"
+    effects:
+      - type: dash
+        target_type: "current_target"
+      - type: damage
+        radius: 1
+        ad_value: [70, 105, 1500]
+        ap_value: [20, 30, 200]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # THRESH - The Box
+  # ═══════════════════════════════════════════════════════════════════════════
+  the_box:
+    name: "The Box"
+    mana_cost: 50
+    cast_time: [8, 6, 4]
+    target_type: "self"
+    effects:
+      - type: damage
+        radius: 3
+        ap_value: [125, 190, 4400]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LUCIAN & SENNA - The Culling
+  # ═══════════════════════════════════════════════════════════════════════════
+  the_culling:
+    name: "The Culling"
+    mana_cost: 60
+    cast_time: [8, 6, 4]
+    target_type: "current_target"
+    effects:
+      - type: multi_strike
+        count: 12
+        ad_value: [100, 150, 800]
+        ap_value: [8, 12, 100]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MEL - Radiant Eclipse
+  # ═══════════════════════════════════════════════════════════════════════════
+  radiant_eclipse:
+    name: "Radiant Eclipse"
+    mana_cost: 200
+    cast_time: [15, 12, 8]
+    target_type: "nearest"
+    effects:
+      - type: damage
+        radius: 3
+        ap_value: [1000, 1500, 10000]
+        damage_type: "magical"
+      - type: damage
+        radius: 3
+        ap_value: [500, 750, 10000]
+        damage_type: "magical"
+

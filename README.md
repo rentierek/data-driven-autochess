@@ -6,12 +6,12 @@ Data-driven symulator walk auto-battler w stylu Teamfight Tactics. Headless engi
 
 | Metryka | Wartość |
 |---------|---------|
-| **Linii kodu Python** | ~15,000 |
-| **Linii konfiguracji YAML** | ~2,500 |
-| **Testy** | 150+ |
+| **Linii kodu Python** | ~18,000 |
+| **Linii konfiguracji YAML** | ~4,500 |
+| **Testy** | 200+ |
 | **Moduły** | 10 |
-| **Typy efektów** | 42 |
-| **Set 16 Abilities** | 51 (1-3 cost) |
+| **Typy efektów** | 50 |
+| **Set 16 Abilities** | 101 (1-5 cost) |
 | **Traity** | 11 |
 | **Przedmioty** | 15 |
 

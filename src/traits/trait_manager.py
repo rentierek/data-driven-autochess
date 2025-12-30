@@ -503,6 +503,138 @@ def apply_ascend_buff(units: List["Unit"], effect: TraitEffect) -> int:
     return count
 
 
+def apply_spawn_tower(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Freljord: Spawn Frozen Tower(s) with auras.
+    Front = HP bonus, Back = Damage Amp.
+    """
+    count = effect.params.get('count', 1)
+    auras = effect.params.get('auras', {})
+    holder_mult = effect.params.get('holder_multiplier', 1.5)
+    on_death = effect.params.get('on_death', None)
+    
+    result = 0
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        
+        # Apply aura bonuses based on position
+        # Front = rows 0-1, Back = rows 2-3
+        row = unit.position.r if hasattr(unit, 'position') else 0
+        is_front = row <= 1
+        
+        if is_front and 'front' in auras:
+            front_aura = auras['front']
+            if front_aura.get('stat') == 'hp':
+                percent = front_aura.get('value_percent', 0.08)
+                mult = holder_mult if hasattr(unit, 'traits') and 'freljord' in unit.traits else 1.0
+                hp_bonus = unit.stats.base_hp * percent * mult
+                unit.stats.base_hp += hp_bonus
+                unit.stats.current_hp += hp_bonus
+        elif not is_front and 'back' in auras:
+            back_aura = auras['back']
+            if back_aura.get('stat') == 'damage_amp':
+                mult = holder_mult if hasattr(unit, 'traits') and 'freljord' in unit.traits else 1.0
+                dmg_amp = back_aura.get('value', 0.10) * mult
+                unit.stats.base_damage_amp += dmg_amp
+        
+        # Store on_death effect
+        if on_death:
+            unit.freljord_tower_death = on_death
+        
+        result += 1
+    
+    return result
+
+
+def apply_summon_unit(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Noxus: Summon Atakhan when enemy loses 15% HP.
+    Star level scales with Noxus count.
+    """
+    unit_type = effect.params.get('unit', 'atakhan')
+    star_source = effect.params.get('star_level_source', 'noxus_count')
+    
+    result = 0
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        
+        # Mark unit as having summon capability
+        unit.can_summon = {
+            'unit_type': unit_type,
+            'star_source': star_source,
+            'summoned': False
+        }
+        result += 1
+    
+    return result
+
+
+def apply_path_bonus(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Ionia: Apply path-specific bonuses.
+    Paths: precision (crit), generosity (gold), spirit (HP + stacking).
+    """
+    path = effect.params.get('path', 'spirit')
+    multiplier = effect.params.get('multiplier', 1.0)
+    
+    bonuses = {
+        'precision': {'crit_chance': 0.20},
+        'generosity': {},  # Gold handled elsewhere
+        'spirit': {'hp': 200, 'stacking_ad': 3, 'stacking_ap': 3}
+    }
+    
+    path_bonus = bonuses.get(path, {})
+    result = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        
+        for stat, value in path_bonus.items():
+            if stat == 'hp':
+                bonus = value * multiplier
+                unit.stats.base_hp += bonus
+                unit.stats.current_hp += bonus
+            elif stat == 'crit_chance':
+                unit.stats.base_crit_chance += value * multiplier
+            elif stat.startswith('stacking_'):
+                # Stacking bonus per cast
+                unit.ionia_stacking = {
+                    'ad': path_bonus.get('stacking_ad', 0) * multiplier,
+                    'ap': path_bonus.get('stacking_ap', 0) * multiplier
+                }
+        
+        result += 1
+    
+    return result
+
+
+def apply_darkin_damage(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Darkin 3: When healed 600+ HP, deal 100 magic damage to 2 nearest enemies.
+    """
+    damage = effect.params.get('damage', 100)
+    target_count = effect.params.get('target_count', 2)
+    
+    result = 0
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        
+        # Track healing
+        unit.darkin_heal_damage = {
+            'threshold': 600,
+            'damage': damage,
+            'targets': target_count,
+            'healed': 0
+        }
+        result += 1
+    
+    return result
+
+
 # Registry efektów traitów
 TRAIT_EFFECT_APPLICATORS = {
     "stat_bonus": apply_stat_bonus,
@@ -518,6 +650,7 @@ TRAIT_EFFECT_APPLICATORS = {
     "mana_generation_bonus": apply_mana_generation_bonus,
     "target_missing_hp_as": apply_target_missing_hp_as,
     "distance_damage_bonus": apply_distance_damage_bonus,
+
     "self_missing_hp_damage": apply_self_missing_hp_damage,
     "ability_applies_debuff": apply_ability_applies_debuff,
     "damage_vs_debuffed": apply_damage_vs_debuffed,
@@ -530,7 +663,13 @@ TRAIT_EFFECT_APPLICATORS = {
     "percent_hp_damage": apply_percent_hp_damage,
     "heal_percent": apply_heal_percent,
     "ascend_buff": apply_ascend_buff,
+    # Advanced trait applicators
+    "spawn_tower": apply_spawn_tower,
+    "summon_unit": apply_summon_unit,
+    "path_bonus": apply_path_bonus,
+    "darkin_damage": apply_darkin_damage,
 }
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════

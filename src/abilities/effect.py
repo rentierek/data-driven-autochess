@@ -2981,11 +2981,190 @@ class HealOverTimeEffect(Effect):
         )
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# TRANSFORM EFFECT - Bel'Veth transformation
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class TransformEffect(Effect):
+    """
+    Transformacja jednostki - zmienia staty, dodaje on-hit effects.
+    Bel'Veth: +33% HP, +AS, stacking true damage on hit.
+    """
+    effect_type: str = "transform"
+    target_filter: EffectTarget = EffectTarget.SELF
+    
+    hp_percent_bonus: float = 0.0
+    attack_speed_bonus: StarValue = 0.0
+    attack_speed_scaling: str = "flat"  # "flat" or "ap"
+    duration: int = -1  # -1 = combat duration
+    on_hit_damage: StarValue = 0.0
+    on_hit_damage_type: str = "true"
+    stacking_per_hit: StarValue = 0.0
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Apply HP bonus
+        if self.hp_percent_bonus > 0:
+            hp_bonus = caster.stats.max_hp * self.hp_percent_bonus
+            caster.stats.current_hp += hp_bonus
+            caster.stats.max_hp += hp_bonus
+        
+        # Apply AS bonus
+        as_bonus = get_star_value(self.attack_speed_bonus, star_level)
+        if self.attack_speed_scaling == "ap":
+            as_bonus *= (1 + caster.stats.ability_power / 100)
+        caster.stats.attack_speed += caster.stats.attack_speed * as_bonus
+        
+        # Set up on-hit damage
+        on_hit = get_star_value(self.on_hit_damage, star_level)
+        stacking = get_star_value(self.stacking_per_hit, star_level)
+        
+        if not hasattr(caster, 'transform_on_hit'):
+            caster.transform_on_hit = {}
+        
+        caster.transform_on_hit = {
+            'base_damage': on_hit,
+            'damage_type': self.on_hit_damage_type,
+            'stacking': stacking,
+            'current_stacks': 0
+        }
+        
+        return EffectResult(
+            effect_type="transform",
+            success=True,
+            value=hp_bonus if self.hp_percent_bonus > 0 else as_bonus
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TransformEffect":
+        stat_changes = data.get("stat_changes", {})
+        on_hit = data.get("on_hit", {})
+        
+        return cls(
+            hp_percent_bonus=stat_changes.get("hp_percent", 0.0),
+            attack_speed_bonus=stat_changes.get("attack_speed", 0.0),
+            attack_speed_scaling=stat_changes.get("attack_speed_scaling", "flat"),
+            duration=data.get("duration", -1),
+            on_hit_damage=on_hit.get("value", 0) if on_hit else 0,
+            on_hit_damage_type=on_hit.get("damage_type", "true") if on_hit else "true",
+            stacking_per_hit=on_hit.get("stacking_per_hit", 0) if on_hit else 0
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ACCUMULATOR EFFECT - Seraphine notes system
+# ═══════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class AccumulatorEffect(Effect):
+    """
+    Akumuluje ładunki (nuty) i triggeruje efekty przy progu.
+    Seraphine: 3 nuty/cast, każda zadaje dmg, przy 12 nutach fala leczenia+dmg.
+    """
+    effect_type: str = "accumulator"
+    target_filter: EffectTarget = EffectTarget.ENEMY
+    
+    notes_per_cast: int = 3
+    note_damage: StarValue = 0.0
+    scaling: str = "ap"
+    trigger_at: int = 12
+    
+    # On trigger effects (simplified - just heal + damage)
+    trigger_heal: StarValue = 0.0
+    trigger_damage: StarValue = 0.0
+    trigger_falloff: float = 0.30
+    
+    def apply(self, caster: "Unit", target: "Unit", star_level: int, simulation: "Simulation") -> EffectResult:
+        # Init accumulator
+        if not hasattr(caster, 'accumulator_notes'):
+            caster.accumulator_notes = 0
+        
+        # Deal note damage for each note
+        note_dmg = get_star_value(self.note_damage, star_level)
+        if self.scaling == "ap":
+            note_dmg *= (1 + caster.stats.ability_power / 100)
+        
+        total_dmg = 0
+        enemies = simulation.get_enemies(caster.team)
+        
+        for i in range(self.notes_per_cast):
+            if enemies:
+                enemy = enemies[i % len(enemies)]
+                actual = enemy.take_damage(note_dmg, DamageType.MAGICAL, caster)
+                total_dmg += actual
+        
+        caster.accumulator_notes += self.notes_per_cast
+        
+        # Check trigger
+        triggered = False
+        if caster.accumulator_notes >= self.trigger_at:
+            triggered = True
+            caster.accumulator_notes = 0
+            
+            # Heal allies
+            heal_val = get_star_value(self.trigger_heal, star_level)
+            if self.scaling == "ap":
+                heal_val *= (1 + caster.stats.ability_power / 100)
+            
+            allies = simulation.get_allies(caster.team)
+            for ally in allies:
+                ally.heal(heal_val, caster)
+            
+            # Damage in line with falloff
+            dmg_val = get_star_value(self.trigger_damage, star_level)
+            if self.scaling == "ap":
+                dmg_val *= (1 + caster.stats.ability_power / 100)
+            
+            for i, enemy in enumerate(enemies):
+                falloff_mult = max(0.1, 1 - (self.trigger_falloff * i))
+                actual_dmg = dmg_val * falloff_mult
+                enemy.take_damage(actual_dmg, DamageType.MAGICAL, caster)
+        
+        return EffectResult(
+            effect_type="accumulator",
+            success=True,
+            value=float(total_dmg),
+            details={
+                "notes": caster.accumulator_notes if hasattr(caster, 'accumulator_notes') else 0,
+                "triggered": triggered
+            }
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AccumulatorEffect":
+        on_trigger = data.get("on_trigger", [])
+        
+        trigger_heal = 0
+        trigger_damage = 0
+        trigger_falloff = 0.30
+        
+        for effect in on_trigger:
+            if effect.get("type") == "heal":
+                trigger_heal = effect.get("ap_value", effect.get("value", 0))
+            elif effect.get("type") == "damage":
+                trigger_damage = effect.get("ap_value", effect.get("value", 0))
+                trigger_falloff = effect.get("falloff_percent", 0.30)
+        
+        return cls(
+            notes_per_cast=data.get("notes_per_cast", 3),
+            note_damage=data.get("note_damage", 0),
+            scaling=data.get("scaling", "ap"),
+            trigger_at=data.get("trigger_at", 12),
+            trigger_heal=trigger_heal,
+            trigger_damage=trigger_damage,
+            trigger_falloff=trigger_falloff
+        )
+
+
 # Add 3-cost effects to registry
 EFFECT_REGISTRY["interval_trigger"] = IntervalTriggerEffect
 EFFECT_REGISTRY["projectile_swarm"] = ProjectileSwarmEffect
 EFFECT_REGISTRY["taunt"] = TauntEffect
 EFFECT_REGISTRY["heal_over_time"] = HealOverTimeEffect
+
+# Add 4-cost effects to registry
+EFFECT_REGISTRY["transform"] = TransformEffect
+EFFECT_REGISTRY["accumulator"] = AccumulatorEffect
 
 
 def create_effect(effect_type: str, data: Dict[str, Any]) -> Effect:

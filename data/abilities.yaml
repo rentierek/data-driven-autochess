@@ -1311,14 +1311,22 @@ abilities:
     name: "Grand Encore"
     mana_cost: 20
     cast_time: [5, 4, 3]
-    target_type: "nearest"
+    target_type: "self"
     effects:
-      - type: damage
-        ap_value: [75, 120, 600]
-        damage_type: "magical"
-      - type: heal
-        target_type: "lowest_hp_ally"
-        ap_value: [60, 90, 400]
+      - type: accumulator
+        notes_per_cast: 3
+        note_damage: [25, 40, 200]
+        scaling: "ap"
+        trigger_at: 12
+        on_trigger:
+          - type: heal
+            target_type: "all_allies"
+            ap_value: [60, 90, 400]
+          - type: damage
+            target_type: "line"
+            ap_value: [270, 405, 2200]
+            damage_type: "magical"
+            falloff_percent: 0.30
 
   # ═══════════════════════════════════════════════════════════════════════════
   # WUKONG - Diverting Trickster
@@ -1355,25 +1363,26 @@ abilities:
     mana_cost: 100
     cast_time: [12, 10, 8]
     target_type: "self"
+    passive:
+      on_kill:
+        stat: "attack_speed"
+        value: 0.05
+        duration: combat
     effects:
       - type: damage
         radius: 2
         ad_value: [150, 225, 900]
         damage_type: "physical"
-      - type: buff
-        stat: "hp_percent"
-        value: 0.33
-        duration: 300
-      - type: buff
-        stat: "attack_speed"
-        value: [0.33, 0.33, 1.33]
-        scaling: "ap"
-        duration: 300
-      - type: stacking_buff
-        stat: "on_hit_true"
-        value: [15, 25, 100]
-        stack_per_hit: [3, 5, 25]
-        duration: 300
+      - type: transform
+        duration: combat
+        stat_changes:
+          hp_percent: 0.33
+          attack_speed: [0.33, 0.33, 1.33]
+          attack_speed_scaling: "ap"
+        on_hit:
+          value: [15, 25, 100]
+          damage_type: "true"
+          stacking_per_hit: [3, 5, 25]
 
   # ═══════════════════════════════════════════════════════════════════════════
   # VEIGAR - Dark Storm

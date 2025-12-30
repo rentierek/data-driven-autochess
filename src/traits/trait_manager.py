@@ -575,32 +575,63 @@ def apply_path_bonus(units: List["Unit"], effect: TraitEffect) -> int:
     """
     Ionia: Apply path-specific bonuses.
     Paths: precision (crit), generosity (gold), spirit (HP + stacking).
+    Random path selection per team if not specified.
     """
-    path = effect.params.get('path', 'spirit')
+    import random
+    
+    # Get path - random if not specified
+    path = effect.params.get('path', None)
+    if path is None:
+        path = random.choice(['precision', 'generosity', 'spirit'])
+    
     multiplier = effect.params.get('multiplier', 1.0)
     
     bonuses = {
-        'precision': {'crit_chance': 0.20},
-        'generosity': {},  # Gold handled elsewhere
-        'spirit': {'hp': 200, 'stacking_ad': 3, 'stacking_ap': 3}
+        'precision': {
+            'crit_chance': 0.20,
+            'crit_damage': 0.20,
+            'description': 'Precision Path - Crit bonus'
+        },
+        'generosity': {
+            'gold_per_round': 2,
+            'description': 'Generosity Path - Gold bonus'
+        },
+        'spirit': {
+            'hp': 200,
+            'stacking_ad': 3,
+            'stacking_ap': 3,
+            'description': 'Spirit Path - HP + stacking AD/AP'
+        }
     }
     
-    path_bonus = bonuses.get(path, {})
+    path_bonus = bonuses.get(path, bonuses['spirit'])
     result = 0
     
     for unit in units:
         if not unit.is_alive():
             continue
         
+        # Store selected path on unit
+        unit.ionia_path = path
+        
         for stat, value in path_bonus.items():
+            if stat == 'description':
+                continue
             if stat == 'hp':
                 bonus = value * multiplier
                 unit.stats.base_hp += bonus
                 unit.stats.current_hp += bonus
             elif stat == 'crit_chance':
                 unit.stats.base_crit_chance += value * multiplier
+            elif stat == 'crit_damage':
+                unit.stats.base_crit_damage += value * multiplier
+            elif stat == 'gold_per_round':
+                # Gold handled elsewhere, just mark it
+                unit.gold_bonus = value * multiplier
             elif stat.startswith('stacking_'):
                 # Stacking bonus per cast
+                if not hasattr(unit, 'ionia_stacking'):
+                    unit.ionia_stacking = {'ad': 0, 'ap': 0}
                 unit.ionia_stacking = {
                     'ad': path_bonus.get('stacking_ad', 0) * multiplier,
                     'ap': path_bonus.get('stacking_ap', 0) * multiplier
@@ -609,6 +640,7 @@ def apply_path_bonus(units: List["Unit"], effect: TraitEffect) -> int:
         result += 1
     
     return result
+
 
 
 def apply_darkin_damage(units: List["Unit"], effect: TraitEffect) -> int:

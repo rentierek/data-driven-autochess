@@ -1,197 +1,200 @@
-# TFT Auto-Battler Simulator
+# 🎮 TFT Auto-Battler Simulator
 
-Data-driven symulator walk auto-battler w stylu Teamfight Tactics. Headless engine z pełnym systemem umiejętności, traitów, przedmiotów i projektili.
+<div align="center">
 
-## 📊 Statystyki Projektu
+![Python](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python&logoColor=white)
+![Set 16](https://img.shields.io/badge/TFT-Set%2016-gold?style=for-the-badge)
+![Abilities](https://img.shields.io/badge/Abilities-101-green?style=for-the-badge)
+![Effects](https://img.shields.io/badge/Effect%20Types-55-purple?style=for-the-badge)
 
-| Metryka | Wartość |
-|---------|---------|
-| **Linii kodu Python** | ~18,000 |
-| **Linii konfiguracji YAML** | ~4,500 |
-| **Testy** | 200+ |
-| **Moduły** | 10 |
-| **Typy efektów** | 50 |
-| **Set 16 Abilities** | 101 (1-5 cost) |
-| **Traity** | 11 |
-| **Przedmioty** | 15 |
+**A comprehensive, data-driven headless simulator for TFT (Teamfight Tactics) auto-battler mechanics.**
 
-## 🎮 Features
+[Features](#-features) • [Getting Started](#-getting-started) • [Architecture](#-architecture) • [Documentation](#-documentation)
 
-### Zaimplementowane Systemy
-
-| System | Status | Opis |
-|--------|--------|------|
-| **Hex Grid** | ✅ | Siatka 7x8, axial coordinates, odd-r offset |
-| **Pathfinding** | ✅ | A* z obsługą kolizji |
-| **Units** | ✅ | Stats, Star Levels (1★/2★/3★), State Machine |
-| **Combat** | ✅ | Physical/Magical/True damage, Crit, Dodge |
-| **Mana** | ✅ | TFT formula (1%+3%, cap 42.5), Overflow |
-| **Abilities** | ✅ | 42 effect types, star scaling, stat scaling |
-| **Projectiles** | ✅ | Homing, miss-on-death, travel time |
-
-# TFT Auto-Battler Simulator - Set 16
-
-A comprehensive, data-driven simulator for TFT (Teamfight Tactics) auto-battler mechanics. Headless engine z pełnym systemem umiejętności, traitów, przedmiotów i projektili.
-
-## Current Implementation Status
-
-| Feature | Status | Details |
-|---------|--------|---------|
-| **Effect Types** | 55 | Full modular system |
-| **Abilities** | 101 | All 1-5 cost champions |
-| **Champions** | 60+ | Set 16 roster |
-| **Traits** | 51 | Fully implemented |
-| **Items** | 40+ | AD/AP/Tank items |
-
-### 1-Cost Champions (14)
-
-Lissandra, Blitzcrank, Warwick, Caitlyn, Illaoi, Jarvan IV, Jhin, Kog'Maw, Lulu, Maddie, Rumble, Shen, Sona, Viego
-
-### 2-Cost Champions (19)
-
-Tristana, Twitch, Twisted Fate, Sion, Graves, Ashe, Seraphine, Yone, Rek'Sai, Cho'Gath, Vi, Poppy, Tryndamere, Corki, Lee Sin, Yorick, Orianna, Ekko, Bard
-
-### 3-Cost Champions (18)
-
-Nautilus, Gangplank, Draven, Zoe, Leona, Milio, Jinx, Ahri, Malzahar, Sejuani, Darius, LeBlanc, Gwen, Dr. Mundo, Kobuko & Yuumi, Loris, Vayne, Kennen
+</div>
 
 ---
 
-## 42 Effect Types
+## ✨ Features
 
-| Kategoria | Efekty |
-|-----------|--------|
-| **Offensive** | `damage`, `dot`, `burn`, `execute`, `sunder`, `shred`, `splash_damage`, `ricochet`, `multi_hit`, `percent_hp_damage`, `dash_through`, `hybrid_damage`, `projectile_swarm` |
-| **CC** | `stun`, `slow`, `chill`, `silence`, `disarm`, `knockback`, `pull`, `taunt` |
-| **Support** | `heal`, `shield`, `shield_self`, `wound`, `buff`, `buff_team`, `mana_grant`, `cleanse`, `decaying_buff`, `stacking_buff`, `heal_over_time` |
-| **Displacement** | `dash` |
-| **Special** | `replace_attacks`, `effect_group`, `mana_reave`, `projectile_spread`, `multi_strike`, `create_zone`, `permanent_stack`, `interval_trigger` |
+### 🎯 Complete Combat System
+
+- **Tick-based simulation** (30 ticks/second)
+- **Hexagonal grid** with proper distance calculations
+- **Projectile system** with homing, travel time, and miss-on-death
+- **AoE calculations** (Circle, Cone, Line)
+
+### 🧙 Modular Ability System
+
+| Category | Count | Examples |
+|----------|-------|----------|
+| **Damage** | 13 | `damage`, `splash_damage`, `percent_hp_damage`, `multi_strike` |
+| **CC** | 8 | `stun`, `knockback`, `taunt`, `suppress` |
+| **Support** | 10 | `heal`, `shield`, `buff_team`, `cleanse` |
+| **Special** | 24 | `teleport`, `stardust`, `trait_effects`, `transform` |
+
+### 📊 Full Set 16 Implementation
+
+| Cost | Champions | Status |
+|------|-----------|--------|
+| ⭐ 1-cost | 14 | ✅ Complete |
+| ⭐⭐ 2-cost | 19 | ✅ Complete |
+| ⭐⭐⭐ 3-cost | 18 | ✅ Complete |
+| ⭐⭐⭐⭐ 4-cost | 26 | ✅ Complete |
+| ⭐⭐⭐⭐⭐ 5-cost | 24 | ✅ Complete |
+
+**Total: 101 abilities implemented and tested!**
 
 ---
 
-## 📁 Struktura Projektu
+## 🚀 Getting Started
 
-```
-datadrive-autochess-simulator/
-├── src/
-│   ├── abilities/          # System umiejętności (42 effect types)
-│   │   ├── ability.py      # Ability dataclass + config
-│   │   ├── effect.py       # All effect implementations (~3000 LoC)
-│   │   ├── scaling.py      # Star + stat scaling
-│   │   ├── projectile.py   # Projectile system
-│   │   └── aoe.py          # AoE calculations
-│   │
-│   ├── combat/             # System walki
-│   │   └── damage.py       # Damage calc + omnivamp + ability crit
-│   │
-│   ├── core/               # Fundamenty
-│   │   ├── hex_coord.py    # Axial hex coordinates
-│   │   ├── hex_grid.py     # Grid z occupancy
-│   │   ├── pathfinding.py  # A* algorithm
-│   │   ├── targeting.py    # Target selectors
-│   │   └── config_loader.py # YAML loading + merge
-│   │
-│   ├── events/             # Logging
-│   │   └── event_logger.py # JSON event log for replay
-│   │
-│   ├── items/              # System przedmiotów
-│   │   ├── item.py         # Item dataclasses
-│   │   └── item_manager.py # Equip, triggers, effects
-│   │
-│   ├── simulation/         # Battle engine
-│   │   └── simulation.py   # Main tick loop (30 TPS)
-│   │
-│   ├── traits/             # System traitów
-│   │   └── trait_manager.py # Counting, activation, effects
-│   │
-│   └── units/              # Unit system
-│       ├── unit.py         # Unit dataclass + debuffs
-│       ├── stats.py        # Stats + modifiers
-│       └── state_machine.py # State machine
-│
-├── data/
-│   ├── defaults.yaml       # Default values + simulation config
-│   ├── abilities.yaml      # 51 Set 16 ability definitions
-│   ├── set16_abilities.yaml # Backup of Set 16 abilities
-│   ├── set16_champions.yaml # Set 16 champion stats
-│   ├── traits.yaml         # Trait definitions
-│   └── items.yaml          # Item definitions
-│
-├── tests/                  # Unit tests
-├── test_set16_1cost.py     # 1-cost ability tests
-├── test_set16_2cost.py     # 2-cost ability tests
-├── test_set16_3cost.py     # 3-cost ability tests
-├── test_8v8_battle.py      # Integration test
-│
-├── main.py                 # Entry point
-└── requirements.txt
-```
+### Prerequisites
 
-## 🚀 Quick Start
+- Python 3.11+
+- PyYAML
+
+### Installation
 
 ```bash
-# Clone
-git clone <repo>
-cd datadrive-autochess-simulator
-
-# Install
+git clone https://github.com/rentierek/data-driven-autochess.git
+cd data-driven-autochess
 pip install -r requirements.txt
-
-# Run tests
-pytest tests/ -v
-pytest test_set16_*.py -v
-
-# Run 8v8 battle
-python test_8v8_battle.py --seed 42
-
-# Run main
-python main.py
 ```
 
-## 🎯 Przykład użycia
+### Quick Example
 
 ```python
 from src.simulation.simulation import Simulation
-from src.core.config_loader import ConfigLoader
 from src.core.hex_coord import HexCoord
+from src.core.config_loader import ConfigLoader
 
-# Setup
-loader = ConfigLoader("data/")
+# Create simulation
 sim = Simulation(seed=42)
-sim._config_loader = loader
+sim._config_loader = ConfigLoader()
 
-# Add units with Set 16 abilities
-unit = sim.add_unit_from_config({
-    'id': 'jinx_1', 'name': 'Jinx',
-    'hp': 800, 'attack_damage': 65, 'attack_speed': 0.85,
-    'range': 4, 'armor': 20, 'magic_resist': 20,
-    'mana': 50, 'mana_start': 0,
-    'ability': 'switcheroo',
+# Add units with abilities
+sim.add_unit_from_config({
+    'id': 'unit_1', 'name': 'Anivia',
+    'hp': 1000, 'attack_damage': 80, 'attack_speed': 0.75,
+    'mana': 45, 'ability': 'frostbite',
 }, team=0, position=HexCoord(0, 0), star_level=2)
 
 # Run battle
 result = sim.run()
-print(f"Winner: Team {result['winner_team']}")
-print(f"Duration: {result['total_ticks']} ticks")
+print(f"Winner: Team {result['winner']} in {result['total_ticks']} ticks")
 ```
 
-## 📈 Następne kroki
+---
 
-1. ~~**1-Cost Abilities**~~ ✅
-2. ~~**2-Cost Abilities**~~ ✅
-3. ~~**3-Cost Abilities**~~ ✅
-4. **4-Cost Abilities** ⏳
-5. **5-Cost Abilities** ⏳
-6. **Economy System** - Gold, shop, XP, levels
-7. **Stage/Round System** - PvE, PvP rounds
-8. **UI/Visualization** - Web frontend
-9. **AI Player** - Monte Carlo Tree Search / RL
+## 🏗 Architecture
 
-## 📄 Dokumentacja
+```
+data-driven-autochess/
+├── src/
+│   ├── abilities/          # Effect system (55 types)
+│   │   ├── effect.py       # All effect classes
+│   │   ├── scaling.py      # Star/AP/AD scaling
+│   │   └── ability.py      # Ability wrapper
+│   ├── combat/             # Damage & targeting
+│   │   ├── damage.py       # Damage calculations
+│   │   └── targeting.py    # 11+ targeting modes
+│   ├── core/               # Core systems
+│   │   ├── hex_coord.py    # Hexagonal math
+│   │   ├── hex_grid.py     # Grid management
+│   │   └── config_loader.py
+│   ├── simulation/         # Battle simulation
+│   │   └── simulation.py   # Main engine
+│   └── traits/             # Trait system (51 traits)
+├── data/
+│   ├── abilities.yaml      # 101 ability definitions
+│   ├── units.yaml          # Champion stats
+│   └── traits.yaml         # Trait definitions
+└── docs/
+    ├── SYSTEMS.md          # Detailed mechanics
+    └── PROJECT_CARD.md     # This file
+```
 
-- [docs/SYSTEMS.md](docs/SYSTEMS.md) - Detailed system documentation
-- [data/set16_abilities.yaml](data/set16_abilities.yaml) - All 51 ability definitions
+---
 
-## 📃 License
+## 📖 Documentation
 
-MIT
+### Key Systems
+
+| System | Description |
+|--------|-------------|
+| **Mana** | TFT formula: `1% + 3%` per attack, max 42.5 mana/attack |
+| **Damage** | Full armor/MR reduction, crit multipliers, true damage |
+| **Scaling** | Star levels (1★/2★/3★), AP/AD ratios |
+| **Debuffs** | Burn, Wound, Chill, Sunder, Shred |
+| **Buffs** | Stat buffs, Attack Speed, Damage Reduction |
+
+### Unique 5-Cost Mechanics
+
+| Champion | Effect | Description |
+|----------|--------|-------------|
+| **Kindred** | `invulnerability_zone` | Allies can't die (HP→1) |
+| **Aurelion Sol** | `stardust` | 8 upgrade thresholds |
+| **Ryze** | `trait_effects` | Bonuses from active traits |
+| **Volibear** | `transform_after_casts` | Transform after 5 uses |
+| **Zaahen** | `escalating_ability` | Execute after 25 uses |
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+python -m pytest tests/
+
+# Quick ability test
+python -c "
+from src.abilities.effect import EFFECT_REGISTRY
+print(f'Effect types: {len(EFFECT_REGISTRY)}')
+"
+```
+
+### Test Results
+
+- ✅ 101/101 abilities functional
+- ✅ Star scaling verified
+- ✅ Item scaling verified
+- ✅ 4v4 battles working
+
+---
+
+## 📈 Stats
+
+| Metric | Value |
+|--------|-------|
+| Effect Types | 55 |
+| Abilities | 101 |
+| Champions | 60+ |
+| Traits | 51 |
+| Items | 40+ |
+| Lines of Code | ~15,000 |
+
+---
+
+## 🔮 Roadmap
+
+- [ ] 7-cost champion abilities
+- [ ] Advanced trait interactions
+- [ ] Web visualization API
+- [ ] Monte Carlo simulations
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**Made with ❤️ for TFT theorycrafters**
+
+[![GitHub](https://img.shields.io/badge/GitHub-rentierek-black?style=flat-square&logo=github)](https://github.com/rentierek/data-driven-autochess)
+
+</div>

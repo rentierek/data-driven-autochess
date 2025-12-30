@@ -380,6 +380,129 @@ def apply_on_attack_counter(units: List["Unit"], effect: TraitEffect) -> int:
     return result
 
 
+def apply_mana_cost_reduction(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Demacia Rally: Reduce mana costs.
+    """
+    reduction = effect.value  # e.g. 0.10 = 10% reduction
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        if not hasattr(unit, 'mana_cost_mult'):
+            unit.mana_cost_mult = 1.0
+        unit.mana_cost_mult *= (1 - reduction)
+        count += 1
+    
+    return count
+
+
+def apply_random_mutation(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Void: Apply random mutation to units.
+    Mutations stored in effect.params['mutations'].
+    """
+    import random
+    
+    mutations = effect.params.get('mutations', [
+        {'id': 'razor_claws', 'ad': 25, 'crit_chance': 0.15},
+        {'id': 'void_armor', 'armor': 40, 'mr': 40},
+        {'id': 'void_speed', 'attack_speed': 0.30},
+        {'id': 'mana_siphon', 'mana_on_hit': 5},
+    ])
+    
+    count = 0
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        
+        # Pick random mutation
+        mutation = random.choice(mutations)
+        unit.void_mutation = mutation['id']
+        
+        # Apply stat bonuses
+        for stat, value in mutation.items():
+            if stat == 'id':
+                continue
+            if stat == 'mana_on_hit':
+                unit.mana_on_hit = value
+            elif hasattr(unit.stats, f'base_{stat}'):
+                current = getattr(unit.stats, f'base_{stat}')
+                setattr(unit.stats, f'base_{stat}', current + value)
+        
+        count += 1
+    
+    return count
+
+
+def apply_grant_souls(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Shadow Isles: Track souls on death.
+    This is applied passively, not directly.
+    """
+    return 0  # Handled by on_unit_death
+
+
+def apply_percent_hp_damage(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Demacia 7: Deal % max HP damage to enemies.
+    """
+    percent = effect.value
+    count = 0
+    
+    from ..combat.damage import DamageType
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        damage = unit.stats.max_hp * percent
+        unit.take_damage(damage, DamageType.MAGICAL, None)
+        count += 1
+    
+    return count
+
+
+def apply_heal_percent(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Heal as percent of max HP (Zaun 5).
+    """
+    percent = effect.value
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        heal_amount = unit.stats.max_hp * percent
+        unit.stats.heal(heal_amount)
+        count += 1
+    
+    return count
+
+
+def apply_ascend_buff(units: List["Unit"], effect: TraitEffect) -> int:
+    """
+    Shurima 4: Ascend buff - major stat boost for duration.
+    """
+    duration = effect.params.get('duration', 90)
+    count = 0
+    
+    for unit in units:
+        if not unit.is_alive():
+            continue
+        
+        # Apply ascension buff
+        unit.stats.base_attack_damage *= 1.5
+        unit.stats.base_ability_power *= 1.5
+        unit.stats.base_attack_speed += 0.50
+        unit.stats.base_durability += 0.20
+        
+        unit.ascended = {'duration': duration, 'start_tick': 0}  # Will be set by caller
+        count += 1
+    
+    return count
+
+
 # Registry efektów traitów
 TRAIT_EFFECT_APPLICATORS = {
     "stat_bonus": apply_stat_bonus,
@@ -400,6 +523,13 @@ TRAIT_EFFECT_APPLICATORS = {
     "damage_vs_debuffed": apply_damage_vs_debuffed,
     "shimmer_fused": apply_shimmer_fused,
     "on_attack_counter": apply_on_attack_counter,
+    # Complex trait applicators
+    "mana_cost_reduction": apply_mana_cost_reduction,
+    "random_mutation": apply_random_mutation,
+    "grant_souls": apply_grant_souls,
+    "percent_hp_damage": apply_percent_hp_damage,
+    "heal_percent": apply_heal_percent,
+    "ascend_buff": apply_ascend_buff,
 }
 
 
@@ -441,6 +571,15 @@ class TraitManager:
             1: TeamTraitState(),
         }
         self._hp_threshold_triggered: Dict[str, Set[str]] = defaultdict(set)  # unit_id -> set of trait_ids
+        
+        # Complex trait tracking
+        self._team_initial_hp: Dict[int, float] = {0: 0, 1: 0}  # Track initial team HP for Demacia rally
+        self._rally_stacks: Dict[int, int] = {0: 0, 1: 0}  # Rally stacks per team
+        self._souls: Dict[int, int] = {0: 0, 1: 0}  # Shadow Isles souls per team
+        self._unit_heal_tracking: Dict[str, float] = {}  # Track healing for Darkin
+        self._void_mutations_applied: Dict[str, str] = {}  # unit_id -> mutation_id
+        self._shimmer_timers: Dict[str, int] = {}  # unit_id -> last shimmer tick
+
     
     def load_traits(self, traits_data: Dict[str, Dict]) -> None:
         """

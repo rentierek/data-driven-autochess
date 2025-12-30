@@ -1132,3 +1132,663 @@ abilities:
           - type: "stun"
             duration: 45
             condition: "target_hit_count_3"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 4-COST CHAMPION ABILITIES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MISS FORTUNE - Heartbreaker
+  # ═══════════════════════════════════════════════════════════════════════════
+  heartbreaker:
+    name: "Heartbreaker"
+    mana_cost: 30
+    cast_time: [8, 6, 4]
+    target_type: "nearest_2"
+    effects:
+      - type: projectile_spread
+        waves: 2
+        ad_value: [115, 175, 600]
+        ap_value: [15, 25, 70]
+        damage_type: "physical"
+        wave_falloff: 0.35
+    passive:
+      every_n_casts: 3
+      bonus_waves: 1
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # AMBESSA - Lacerate
+  # ═══════════════════════════════════════════════════════════════════════════
+  lacerate:
+    name: "Lacerate"
+    mana_cost: 20
+    cast_time: [5, 4, 3]
+    target_type: "current_target"
+    reset_on_kill: true
+    effects:
+      - type: dash
+        target_type: "current_target"
+      - type: damage
+        radius: 1
+        ad_value: [45, 65, 300]
+        ap_value: [5, 10, 25]
+        damage_type: "physical"
+      - type: damage
+        target_type: "line_2"
+        ad_value: [45, 65, 300]
+        ap_value: [5, 10, 25]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # TARIC - Starlight's Touch
+  # ═══════════════════════════════════════════════════════════════════════════
+  starlights_touch:
+    name: "Starlight's Touch"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: buff_team
+        stat: "magic_resist"
+        value: [10, 20, 100]
+        duration: 300
+      - type: shield
+        value: [600, 700, 2500]
+        scaling: "ap"
+        duration: 120
+      - type: replace_attacks
+        count: 2
+        bonus_magic_damage: [200, 300, 3000]
+        scaling: "ap"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GAREN - Judgment
+  # ═══════════════════════════════════════════════════════════════════════════
+  judgment:
+    name: "Judgment"
+    mana_cost: 120
+    cast_time: [12, 10, 8]
+    target_type: "self"
+    effects:
+      - type: buff
+        stat: "damage_reduction"
+        value: [0.50, 0.50, 0.90]
+        duration: 90
+      - type: heal
+        value: [300, 350, 1000]
+        scaling: "ap"
+        percent_hp: 0.10
+      - type: damage
+        radius: 1
+        ad_value: [300, 450, 5100]
+        damage_type: "physical"
+      - type: shred
+        value: 15
+        duration: 90
+      - type: sunder
+        value: 15
+        duration: 90
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LUX - Final Spark
+  # ═══════════════════════════════════════════════════════════════════════════
+  final_spark:
+    name: "Final Spark"
+    mana_cost: 50
+    cast_time: [8, 6, 4]
+    target_type: "cluster"
+    effects:
+      - type: damage
+        target_type: "line"
+        first_n_hit: 2
+        ap_value: [30, 45, 100]
+        damage_type: "magical"
+      - type: stun
+        target_type: "line"
+        first_n_hit: 2
+        duration: 30
+      - type: damage
+        target_type: "line"
+        ap_value: [330, 500, 1600]
+        damage_type: "magical"
+        secondary_value: [90, 135, 900]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BRAUM - Unbreakable Frost
+  # ═══════════════════════════════════════════════════════════════════════════
+  unbreakable_frost:
+    name: "Unbreakable Frost"
+    mana_cost: 120
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: buff
+        stat: "damage_reduction"
+        ap_value: [0.55, 0.55, 0.90]
+        duration: 120
+      - type: taunt
+        projectiles_only: true
+        duration: 120
+    on_hit_taken:
+      - type: damage
+        radius: 1
+        ap_value: [15, 25, 1000]
+        armor_ratio: [0.20, 0.30, 3.00]
+        damage_type: "magical"
+      - type: chill
+        value: 0.30
+        duration: 90
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # LISSANDRA 4-COST - Frozen Tomb
+  # ═══════════════════════════════════════════════════════════════════════════
+  frozen_tomb:
+    name: "Frozen Tomb"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "current_target"
+    effects:
+      - type: stun
+        duration: 45
+      - type: damage
+        ap_value: [275, 415, 2500]
+        damage_type: "magical"
+        bonus_vs_debuff:
+          debuff: "chilled"
+          bonus: 0.12
+      - type: damage
+        radius: 2
+        ap_value: [440, 660, 2800]
+        damage_type: "magical"
+        bonus_vs_debuff:
+          debuff: "chilled"
+          bonus: 0.12
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SERAPHINE - Grand Encore
+  # ═══════════════════════════════════════════════════════════════════════════
+  grand_encore:
+    name: "Grand Encore"
+    mana_cost: 20
+    cast_time: [5, 4, 3]
+    target_type: "nearest"
+    effects:
+      - type: damage
+        ap_value: [75, 120, 600]
+        damage_type: "magical"
+      - type: heal
+        target_type: "lowest_hp_ally"
+        ap_value: [60, 90, 400]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # WUKONG - Diverting Trickster
+  # ═══════════════════════════════════════════════════════════════════════════
+  diverting_trickster:
+    name: "Diverting Trickster"
+    mana_cost: 90
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    passive:
+      on_death:
+        spawn_clone: true
+        clone_hp_percent: 0.40
+        clone_hp_bonus: [150, 200, 2000]
+    effects:
+      - type: buff
+        stat: "armor"
+        ap_value: [100, 110, 400]
+        duration: 120
+      - type: buff
+        stat: "magic_resist"
+        ap_value: [100, 110, 400]
+        duration: 120
+      - type: damage
+        radius: 2
+        ad_value: [150, 225, 3000]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BEL'VETH - Endless Banquet
+  # ═══════════════════════════════════════════════════════════════════════════
+  endless_banquet:
+    name: "Endless Banquet"
+    mana_cost: 100
+    cast_time: [12, 10, 8]
+    target_type: "self"
+    effects:
+      - type: damage
+        radius: 2
+        ad_value: [150, 225, 900]
+        damage_type: "physical"
+      - type: buff
+        stat: "hp_percent"
+        value: 0.33
+        duration: 300
+      - type: buff
+        stat: "attack_speed"
+        value: [0.33, 0.33, 1.33]
+        scaling: "ap"
+        duration: 300
+      - type: stacking_buff
+        stat: "on_hit_true"
+        value: [15, 25, 100]
+        stack_per_hit: [3, 5, 25]
+        duration: 300
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # VEIGAR - Dark Storm
+  # ═══════════════════════════════════════════════════════════════════════════
+  dark_storm:
+    name: "Dark Storm"
+    mana_cost: 60
+    cast_time: [10, 8, 6]
+    target_type: "random_enemies"
+    passive:
+      amplification:
+        stat: "ap"
+        percent: 0.50
+      on_kill_by_ability:
+        permanent_stack:
+          stat: "ap"
+          value: 1
+    effects:
+      - type: projectile_swarm
+        count: [12, 12, 24]
+        ap_value: [60, 90, 135]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # NIDALEE - Relentless Pounce
+  # ═══════════════════════════════════════════════════════════════════════════
+  relentless_pounce:
+    name: "Relentless Pounce"
+    mana_cost: 40
+    cast_time: [6, 5, 4]
+    target_type: "lowest_hp_adjacent"
+    reset_on_kill: true
+    reset_damage_reduction: 0.50
+    effects:
+      - type: dash
+        target_type: "lowest_hp_adjacent"
+      - type: damage
+        ap_value: [300, 450, 1400]
+        damage_type: "magical"
+        bonus_vs_trait:
+          Warden: 0.50
+          Bruiser: 0.25
+      - type: damage
+        radius: 1
+        ap_value: [100, 150, 600]
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SWAIN - Nevermove
+  # ═══════════════════════════════════════════════════════════════════════════
+  nevermove:
+    name: "Nevermove"
+    mana_cost: 145
+    cast_time: [12, 10, 8]
+    target_type: "self"
+    passive:
+      type: interval_trigger
+      interval: 30
+      effects:
+        - type: heal
+          target_type: "self"
+          ap_value: [22, 24, 100]
+          percent_hp: 0.015
+        - type: damage
+          radius: 2
+          ap_value: [20, 30, 90]
+          damage_type: "magical"
+    effects:
+      - type: damage
+        radius: 3
+        ap_value: [100, 150, 1800]
+        damage_type: "magical"
+      - type: stun
+        radius: 3
+        duration: [52, 52, 240]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # NASUS - Fury of the Sands
+  # ═══════════════════════════════════════════════════════════════════════════
+  fury_of_the_sands:
+    name: "Fury of the Sands"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "nearest_4"
+    effects:
+      - type: damage
+        target_type: "nearest_4"
+        ap_value: [485, 620, 3000]
+        damage_type: "true"
+        split_damage: true
+        lifesteal: 1.0
+      - type: buff
+        stat: "armor"
+        value: 30
+        duration: 240
+      - type: buff
+        stat: "magic_resist"
+        value: 30
+        duration: 240
+      - type: create_zone
+        radius: 1
+        duration: 240
+        tick_rate: 30
+        on_tick_effects:
+          - type: percent_hp_damage
+            percent: [0.015, 0.015, 0.12]
+            damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # KALISTA - Endless Rend
+  # ═══════════════════════════════════════════════════════════════════════════
+  endless_rend:
+    name: "Endless Rend"
+    mana_cost: 80
+    cast_time: [10, 8, 6]
+    target_type: "nearest_3"
+    effects:
+      - type: multi_strike
+        count: 20
+        count_per_soul: 1
+        ad_value: [28, 42, 450]
+        ap_value: [2, 3, 15]
+        damage_type: "physical"
+        on_hit:
+          - type: sunder
+            value: 1
+            duration: 120
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # FIZZ - Playful Trickster
+  # ═══════════════════════════════════════════════════════════════════════════
+  playful_trickster:
+    name: "Playful Trickster"
+    mana_cost: 20
+    cast_time: [6, 5, 4]
+    target_type: "farthest"
+    target_radius: 4
+    effects:
+      - type: buff
+        stat: "untargetable"
+        duration: 15
+      - type: dash
+        target_type: "farthest"
+        radius: 4
+      - type: damage
+        radius: 1
+        ap_value: [75, 115, 300]
+        damage_type: "magical"
+      - type: replace_attacks
+        count: 4
+        bonus_attack_speed: 0.50
+        bonus_magic_damage: [70, 105, 450]
+        scaling: "ap"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # YUNARA - Transcendent State
+  # ═══════════════════════════════════════════════════════════════════════════
+  transcendent_state:
+    name: "Transcendent State"
+    mana_cost: 50
+    cast_time: [8, 6, 4]
+    target_type: "self"
+    effects:
+      - type: replace_attacks
+        duration: 120
+        infinite_range: true
+        bonus_attack_speed: [0.75, 0.75, 3.00]
+        attack_speed_scaling: "ap"
+        attack_type: "line"
+        ad_value: [85, 130, 450]
+        damage_type: "physical"
+        line_falloff: [0.70, 0.70, 0.30]
+        on_crit:
+          bonus_true_damage_percent: 0.33
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SKARNER - Impale
+  # ═══════════════════════════════════════════════════════════════════════════
+  impale:
+    name: "Impale"
+    mana_cost: 120
+    cast_time: [12, 10, 8]
+    target_type: "nearest_3"
+    passive:
+      type: buff_team
+      stat: "armor"
+      value: [10, 20, 100]
+      duration: combat
+    effects:
+      - type: shield
+        target_type: "self"
+        ap_value: [725, 875, 3000]
+        duration: 120
+      - type: damage
+        target_type: "nearest_3"
+        armor_ratio: [1.20, 1.80, 25.00]
+        damage_type: "physical"
+      - type: stun
+        target_type: "nearest_3"
+        duration: [60, 60, 240]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DIANA - Lunar Rush
+  # ═══════════════════════════════════════════════════════════════════════════
+  lunar_rush:
+    name: "Lunar Rush"
+    mana_cost: 30
+    cast_time: [6, 5, 4]
+    target_type: "self"
+    passive:
+      on_damage_dealt:
+        apply_mark: "moonlit"
+        mark_effect:
+          damage_reduction: 0.10
+          duration: 150
+    effects:
+      - type: shield
+        target_type: "self"
+        ap_value: [200, 250, 300]
+        duration: 120
+      - type: damage
+        target_type: "farthest"
+        radius: 4
+        condition: "unmarked"
+        ap_value: [165, 250, 500]
+        damage_type: "magical"
+      - type: dash
+        target_type: "all_marked"
+        mark: "moonlit"
+        damage: [150, 225, 1250]
+        scaling: "ap"
+        damage_type: "magical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # KAI'SA - Icathian Rain (AD Version)
+  # ═══════════════════════════════════════════════════════════════════════════
+  icathian_rain:
+    name: "Icathian Rain"
+    mana_cost: 10
+    cast_time: [4, 3, 2]
+    target_type: "nearest_4"
+    condition: "ad_higher_than_ap"
+    effects:
+      - type: dash
+        direction: "away_from_enemies"
+        distance: 2
+      - type: projectile_spread
+        target_count: 4
+        projectile_count: [15, 15, 25]
+        ad_value: [38, 57, 135]
+        ap_value: [6, 9, 20]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # KAI'SA - Supercharge (AP Version)
+  # ═══════════════════════════════════════════════════════════════════════════
+  supercharge:
+    name: "Supercharge"
+    mana_cost: 10
+    cast_time: [4, 3, 2]
+    target_type: "self"
+    condition: "ap_higher_than_ad"
+    effects:
+      - type: buff
+        stat: "attack_speed"
+        value: [0.20, 0.20, 1.00]
+        duration: combat
+      - type: replace_attacks
+        duration: 150
+        bonus_magic_damage: [60, 90, 500]
+        scaling: "ap"
+        every_n_attacks: 5
+        enhanced_damage: [265, 400, 1600]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # RENEKTON - Slice and Dice
+  # ═══════════════════════════════════════════════════════════════════════════
+  slice_and_dice:
+    name: "Slice and Dice"
+    mana_cost: 30
+    cast_time: [6, 5, 4]
+    target_type: "farthest"
+    target_radius: 2
+    effects:
+      - type: dash
+        target_type: "farthest"
+        radius: 2
+        damage_through: true
+        ad_value: [80, 120, 360]
+        damage_type: "physical"
+      - type: multi_strike
+        count: 4
+        stacking_count: true
+        ad_value: [55, 85, 550]
+        ap_value: [5, 10, 50]
+        damage_type: "physical"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # YONE 4-COST - Kin of the Stained Blade
+  # ═══════════════════════════════════════════════════════════════════════════
+  kin_of_the_stained_blade:
+    name: "Kin of the Stained Blade"
+    mana_cost: 100
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    passive:
+      on_attack:
+        alternating: true
+        effects:
+          - type: damage
+            ad_value: [80, 120, 800]
+            damage_type: "physical"
+          - type: damage
+            ap_value: [140, 210, 1400]
+            damage_type: "magical"
+    effects:
+      - type: dash_through
+        target_type: "most_enemies"
+        radius: 3
+        knockup_duration: 45
+      - type: hybrid_damage
+        target_type: "all_dashed_through"
+        ad_value: [80, 120, 480]
+        ap_value: [80, 120, 480]
+      - type: hybrid_damage
+        target_type: "all_dashed_through"
+        ad_value: [320, 480, 2160]
+        ap_value: [320, 480, 2160]
+        split_damage: true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # WARWICK 4-COST - Eternal Hunger
+  # ═══════════════════════════════════════════════════════════════════════════
+  eternal_hunger:
+    name: "Eternal Hunger"
+    mana_cost: 100
+    cast_time: [10, 8, 6]
+    target_type: "self"
+    effects:
+      - type: buff
+        stat: "attack_speed"
+        value: 1.00
+        as_scaling: true
+        duration: combat
+      - type: buff
+        stat: "omnivamp"
+        value: 0.15
+        duration: combat
+      - type: buff
+        stat: "on_hit_physical"
+        ad_value: [45, 70, 550]
+        duration: combat
+    passive:
+      on_kill:
+        buff_allies: ["Jinx", "Vi"]
+        stat: "attack_speed"
+        ap_value: 0.20
+        duration: combat
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SINGED - Poison Trail
+  # ═══════════════════════════════════════════════════════════════════════════
+  poison_trail:
+    name: "Poison Trail"
+    mana_cost: 80
+    cast_time: [8, 6, 4]
+    target_type: "self"
+    passive:
+      roaming: true
+      ignore_pathing: true
+      trail:
+        type: aura_trail
+        trail_duration: 120
+        ap_value: [25, 38, 160]
+        damage_type: "magical"
+        mana_per_tick_as_percent: 0.10
+    effects:
+      - type: buff
+        stat: "move_speed"
+        value: 0.30
+        duration: 120
+      - type: buff
+        stat: "armor"
+        value: 50
+        duration: 120
+      - type: buff
+        stat: "magic_resist"
+        value: 50
+        duration: 120
+      - type: heal_over_time
+        ap_value: [80, 100, 500]
+        duration: 120
+        tick_rate: 30
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # RIFT HERALD - Warp Armor
+  # ═══════════════════════════════════════════════════════════════════════════
+  warp_armor:
+    name: "Warp Armor"
+    mana_cost: 125
+    cast_time: [12, 10, 8]
+    target_type: "self"
+    effects:
+      - type: buff
+        stat: "hp"
+        value: [350, 450, 1350]
+        duration: combat
+        grow: true
+      - type: damage
+        radius: 2
+        ap_value: [100, 150, 1500]
+        percent_hp: 0.06
+        damage_type: "magical"
+      - type: buff
+        stat: "damage_reduction"
+        ap_value: 0.30
+        duration: 120
+
